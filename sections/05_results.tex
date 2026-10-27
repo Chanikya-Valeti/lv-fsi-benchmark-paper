@@ -1,41 +1,72 @@
 \section{Results}\label{sec:results}
 
-\subsection{Step 0: solid verification against AR25}
-\RES{Overlay $\uu(\vect p_0,t)$, $\uu(\vect p_1,t)$ against the nine AR25 codes
-(as in their Fig.~10); table of $\RED$ per mesh level.}
+\subsection{Problem S: solid verification against AR25}
+\RES{Overlay $\uu(\vect p_0,t)$, $\uu(\vect p_1,t)$ for Steps 0A, 0B and 1
+against the nine AR25 codes (as in their Figs.~8--10); table of $\RED$ per
+mesh level. This fixes the solid settings used in Problems F and C.}
 
-\subsection{Step 1: prescribed-motion CFD}
-\RES{Volume conservation error, $E_k(t)$, mid-plane velocity snapshots;
-mesh and $\dt$ convergence.}
+\subsection{Problem F: passive filling}
+\RES{F-p: displacements vs.\ the AR25 Step~0B solid-only solution, and the
+FSI--solid-only difference (effect of the fluid); $V(t)$, inflow rate,
+$\Delta p_{\mathrm{IVPD}}(t)$, $E_k(t)$; vortex-ring formation and
+propagation (mid-plane snapshots). F-Q: cavity pressure required to accommodate
+the imposed volume; coupling iterations compared with F-p.}
 
-\subsection{Step 2: coupled passive filling}
-\RES{$V(t)$, $\bar p(t)$, $\Delta p_{\mathrm{IVPD}}(t)$, displacements;
-vortex-ring formation and propagation; FSI iterations per time step.}
-
-\subsection{Step 3: full filling--contraction cycle}
-\RES{PV loop, EF, stroke work, wall thickening, apex displacement, twist;
-$E_k$ and dissipation; snapshots at end-filling, peak ejection, end-ejection.}
+\subsection{Problem C: active contraction}
+\RES{C-p: displacements vs.\ the AR25 Step~0A solid-only solution, and the
+FSI--solid-only difference; ejected volume and outflow rate; wall thickening,
+apex displacement and twist; $\Delta p_{\mathrm{IVPD}}(t)$ and $E_k(t)$;
+velocity field at peak ejection.}
 
 \subsection{Mesh and time-step convergence}
 \begin{table}[h]
 \centering
-\caption{Grid-convergence study, Step 3. \RES{fill}}
+\caption{Grid-convergence study. \RES{fill; one block per problem}}
 \label{tab:gci}
-\begin{tabular}{lcccccc}
+\small
+\begin{tabular}{llcccccc}
 \toprule
-QoI & M2 & M3 & M4 & $p_{\mathrm{obs}}$ & $\phi_{\mathrm{ext}}$ & GCI$_{43}$ [\%] \\
+Problem & QoI & M2 & M3 & M4 & $p_{\mathrm{obs}}$ & $\phi_{\mathrm{ext}}$ & GCI$_{43}$ [\%] \\
 \midrule
-EDV [mL] & & & & & & \\
-ESV [mL] & & & & & & \\
-Peak $\bar p$ [kPa] & & & & & & \\
-Peak $\Delta p_{\mathrm{IVPD}}$ [Pa] & & & & & & \\
-Peak $E_k$ [mJ] & & & & & & \\
-$u_x(\vect p_0)$ at $t_3$ [mm] & & & & & & \\
+F-p & max $V$ [mL] & & & & & & \\
+    & peak $\Delta p_{\mathrm{IVPD}}$ [Pa] & & & & & & \\
+    & peak $E_k$ [mJ] & & & & & & \\
+    & $u_x(\vect p_0)$ [mm] & & & & & & \\
+\midrule
+C-p & ejected volume [mL] & & & & & & \\
+    & peak outflow [mL/s] & & & & & & \\
+    & peak $E_k$ [mJ] & & & & & & \\
+    & $u_x(\vect p_0)$ [mm] & & & & & & \\
 \bottomrule
 \end{tabular}
 \end{table}
-\RES{Same structure for $\dt$ (Table) and scheme sensitivity (Table/Fig.).}
+\RES{Same structure for the time-step study.}
+
+\subsection{Sensitivity to numerical settings}
+\begin{table}[h]
+\centering
+\caption{Robustness map, mesh M2. \checkmark: completes; $\times$: diverges
+(time of failure). \RES{fill}}
+\label{tab:robust}
+\small
+\begin{tabular}{lllccc}
+\toprule
+Category & Setting & Value & F-p & C-p & F-Q \\
+\midrule
+Solid & incompressibility & mixed / displacement & & & \\
+      & momentum stab.\ $c_{\uu}$ & 0.1 / 1 / 10 / 100 & & & \\
+      & pressure stab.\ $c_p$ & 0.1 / 1 / 10 & & & \\
+Fluid & time scheme & Euler / backward & & & \\
+      & convection & upwind / linearUpwind / linear & & & \\
+Coupling & interface & D--N / Robin & & & \\
+      & acceleration & fixed $\omega$ / Aitken / IQN-ILS & & & \\
+      & $\epsilon_{\mathrm{FSI}}$ & $10^{-3}$ \dots\ $10^{-6}$ & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+\RES{For each setting also: $\RED$ vs.\ baseline, FSI iterations per step,
+wall-clock.}
 
 \subsection{Computational cost}
-\RES{Wall-clock, cores, FSI iterations for each mesh/$\dt$; recommended
-``benchmark-grade'' setting balancing cost and accuracy.}
+\RES{Wall-clock, cores, FSI iterations per step for each mesh/$\dt$;
+recommended benchmark-grade configuration balancing cost and accuracy.}

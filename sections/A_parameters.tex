@@ -5,6 +5,7 @@
 \caption{Solid parameters (AR25, Tables 1--3).}
 \label{tab:solidparams}
 \small
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{llll}
 \toprule
 Parameter & Symbol & Value & Unit \\
@@ -19,12 +20,12 @@ Sheet & $a_s$, $b_s$ & 2481.0, 11.12 & \si{Pa}, -- \\
 Fibre--sheet & $a_{fs}$, $b_{fs}$ & 216.0, 11.436 & \si{Pa}, -- \\
 Contractility & $\sigma_0$ & \num{1.5e5} & \si{Pa} \\
 Activation & $\gamma$, $\alpha_{\min}$, $\alpha_{\max}$ & 0.005, $-30$, 5 & \si{s}, --, -- \\
-Activation times & $t_{\mathrm{sys}}$, $t_{\mathrm{dias}}$ & \TODO{0.16, 0.484 (AR25) or shifted} & \si{s} \\
+Activation times & $t_{\mathrm{sys}}$, $t_{\mathrm{dias}}$ & 0.16, 0.484 & \si{s} \\
 Helix angle endo/epi & $\alpha_{\mathrm{endo}}$, $\alpha_{\mathrm{epi}}$ & $-60$, $+60$ & \si{\degree} \\
 Epicardial spring/dashpot & $\alpha_{\mathrm{epi}}$, $\beta_{\mathrm{epi}}$ & \num{1e8}, \num{5e3} & \si{Pa/m}, \si{Pa.s/m} \\
 Base spring/dashpot & $\alpha_{\mathrm{top}}$, $\beta_{\mathrm{top}}$ & \num{1e5}, \num{5e3} & \si{Pa/m}, \si{Pa.s/m} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \begin{table}[h]
