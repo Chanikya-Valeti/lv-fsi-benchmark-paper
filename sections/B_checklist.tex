@@ -1,0 +1,28 @@
+\section{Minimum reporting checklist for ventricular FSI}\label{app:checklist}
+
+\begin{table}[h]
+\centering
+\caption{Proposed minimum reporting checklist.}
+\label{tab:checklist}
+\small
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+Category & Items \\
+\midrule
+Geometry & Cavity and wall dimensions or the surface file; reference
+  (unloaded vs.\ image) configuration; reference cavity volume \\
+Fibres & Rule/algorithm, helix/sheet angles, data file \\
+Solid model & Constitutive law and all parameters; incompressibility treatment;
+  active model and activation timing; solid boundary conditions \\
+Fluid model & Density, viscosity (rheology), turbulence assumption;
+  inflow/outflow conditions and waveforms; valve treatment \\
+Discretisation & Method (FE/FV/IB/\dots), element/cell type and order,
+  cell counts and size, spatial schemes, stabilisation \\
+Time integration & Schemes for solid and fluid, $\dt$, Courant number \\
+Coupling & Monolithic/partitioned, interface conditions, relaxation/acceleration,
+  tolerance, iterations per step \\
+Verification & Mesh and time-step sensitivity with QoIs and error estimates \\
+Availability & Code version, input files, meshes, output data \\
+\bottomrule
+\end{tabularx}
+\end{table}

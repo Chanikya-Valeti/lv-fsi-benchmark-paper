@@ -1,0 +1,31 @@
+\section{Discussion}\label{sec:discussion}
+
+\subsection{What the benchmark tests}
+\TODO{Map each step to the numerical difficulty it isolates: anisotropic
+active nearly-incompressible solid (Step 0), ALE/GCL and vortex dynamics
+(Step 1), added mass with $\rho_{\mathrm f}/\rho_{\mathrm s}\approx 1$
+(Step 2), active--fluid coupling and kinematically closed cavity (Step 3).}
+
+\subsection{Valve-free driving and the incompressibility dilemma}\label{sec:disc:dilemma}
+\TODO{Discuss the consequence of prescribing $Q$ on all open boundaries:
+cavity volume is imposed, pressure is a multiplier, Dirichlet--Neumann
+partitioned coupling fails without a volume constraint or Robin coupling
+\citep{Kuttler2006}; how solids4foam handles it; implication for other codes
+(monolithic codes unaffected). Compare with the Windkessel variant if run.}
+
+\subsection{Sensitivity to discretisation choices}
+\TODO{Which QoIs converge fast (global: $V$, $\bar p$) vs.\ slowly (local:
+IVPD, vortex metrics, $E_k$); recommended minimum resolution.}
+
+\subsection{Limitations}
+Idealised geometry without papillary muscles or trabeculae; no valve
+leaflets; prescribed (not physiologically regulated) inflow/outflow;
+Newtonian, laminar blood; prescribed rather than electrophysiology-driven
+activation; the AR25 ventricle is large ($V_0=\SI{168}{mL}$ unloaded), more
+representative of a dilated than a healthy LV. These are deliberate
+simplifications that keep the benchmark unambiguous; each can be relaxed in
+later steps.
+
+\subsection{Recommendations for reporting}
+\Cref{app:checklist} lists the minimum information that, in our view, an LV
+FSI study should report to be reproducible.
