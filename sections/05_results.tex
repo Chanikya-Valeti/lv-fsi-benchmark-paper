@@ -1,72 +1,94 @@
 \section{Results}\label{sec:results}
+\DATA{No numerical results exist yet for the coupled problems. This section
+is the planned structure; every table is empty by design and must be
+removed from any version circulated as a completed manuscript. The
+preliminary discrepancies and mesh studies reported in the description of
+PR~\#571 are historical evidence and are not quoted here unless their logs
+and commits are supplied.}
 
-\subsection{Problem S: solid verification against AR25}
-\RES{Overlay $\uu(\vect p_0,t)$, $\uu(\vect p_1,t)$ for Steps 0A, 0B and 1
-against the nine AR25 codes (as in their Figs.~8--10); table of $\RED$ per
-mesh level. This fixes the solid settings used in Problems F and C.}
+\subsection{Problem S: solid cross-code comparison}
+\RES{Component histories at $\vect p_0$, $\vect p_1$ for Steps 0A, 0B, 1
+against the nine AR25 solutions (as their Figs.~8--10); $\RED$ per mesh
+level; the AR25 ensemble spread for context.}
 
-\subsection{Problem F: passive filling}
-\RES{F-p: displacements vs.\ the AR25 Step~0B solid-only solution, and the
-FSI--solid-only difference (effect of the fluid); $V(t)$, inflow rate,
-$\Delta p_{\mathrm{IVPD}}(t)$, $E_k(t)$; vortex-ring formation and
-propagation (mid-plane snapshots). F-Q: cavity pressure required to accommodate
-the imposed volume; coupling iterations compared with F-p.}
+\subsection{Implementation checks}
+\RES{Constitutive point tests; fibre orthonormality; ODE reproduction of
+the forcing tables; GCL test; interface transfer conservation; simpler
+coupled test.}
 
-\subsection{Problem C: active contraction}
-\RES{C-p: displacements vs.\ the AR25 Step~0A solid-only solution, and the
-FSI--solid-only difference; ejected volume and outflow rate; wall thickening,
-apex displacement and twist; $\Delta p_{\mathrm{IVPD}}(t)$ and $E_k(t)$;
-velocity field at peak ejection.}
+\subsection{Problem F: pressure-driven passive deformation}
+\RES{F-p: displacements compared with the AR25 Step~0B solid-only solution
+(a loading-model comparison); $V(t)$, $Q_{\mathrm{in}}(t)$ including any
+reversal, net and gross volumes, $R_V$; $\Delta p_{\mathrm{IVPD}}(t)$,
+$E_k(t)$, $\Phi_{\mathrm f}(t)$; vortex formation in $z=0$; coupling
+iterations. F-Q: cavity pressure required by the imposed volume; coupling
+iterations compared with F-p.}
 
-\subsection{Mesh and time-step convergence}
+\subsection{Problem C: activation-driven contraction}
+\RES{C-p: displacements compared with the AR25 Step~0A solid-only
+solution; net ejected and gross outward volume, outflow rate and reversal
+during relaxation; wall thickening, apex displacement and twist;
+$\Delta p_{\mathrm{IVPD}}(t)$, $E_k(t)$; velocity field at peak outflow.}
+
+\subsection{Spatial and temporal convergence}
 \begin{table}[h]
 \centering
-\caption{Grid-convergence study. \RES{fill; one block per problem}}
+\caption{Grid-convergence study (levels 1--3 = M4, M3, M2). Only
+monotonically convergent triplets carry a GCI. \DATA{fill}}
 \label{tab:gci}
-\small
-\begin{tabular}{llcccccc}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llccccccc}
 \toprule
-Problem & QoI & M2 & M3 & M4 & $p_{\mathrm{obs}}$ & $\phi_{\mathrm{ext}}$ & GCI$_{43}$ [\%] \\
+Problem & QoI & $\phi_3$ (M2) & $\phi_2$ (M3) & $\phi_1$ (M4) & class & $p_{\mathrm{obs}}$ & $\phi_{\mathrm{ext}}$ & GCI$_{21}$ [\%] \\
 \midrule
-F-p & max $V$ [mL] & & & & & & \\
-    & peak $\Delta p_{\mathrm{IVPD}}$ [Pa] & & & & & & \\
-    & peak $E_k$ [mJ] & & & & & & \\
-    & $u_x(\vect p_0)$ [mm] & & & & & & \\
+F-p & $V$ at peak $p$ [mL] & & & & & & & \\
+    & peak $\Delta p_{\mathrm{IVPD}}$ [Pa] (time [s]) & & & & & & & \\
+    & peak $E_k$ [mJ] (time [s]) & & & & & & & \\
+    & $u_x(\vect p_0)$ at \SI{0.45}{s} [mm] & & & & & & & \\
+    & $\max|R_V|/V_0$ & & & & & & & \\
 \midrule
-C-p & ejected volume [mL] & & & & & & \\
-    & peak outflow [mL/s] & & & & & & \\
-    & peak $E_k$ [mJ] & & & & & & \\
-    & $u_x(\vect p_0)$ [mm] & & & & & & \\
+C-p & net ejected volume [mL] & & & & & & & \\
+    & gross outward volume [mL] & & & & & & & \\
+    & peak outflow [mL/s] (time [s]) & & & & & & & \\
+    & peak $E_k$ [mJ] (time [s]) & & & & & & & \\
+    & $u_x(\vect p_0)$ at \SI{0.45}{s} [mm] & & & & & & & \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
-\RES{Same structure for the time-step study.}
+\RES{Same structure for solid-only and fluid-only refinement, and for the
+time-step study with observed temporal order.}
 
 \subsection{Sensitivity to numerical settings}
 \begin{table}[h]
 \centering
-\caption{Robustness map, mesh M2. \checkmark: completes; $\times$: diverges
-(time of failure). \RES{fill}}
+\caption{Robustness map, mesh M2. \checkmark: completed, every step
+converged, conservation and mesh-quality checks passed; $\times$: failed
+(time and mode of failure). Deviation is $e_{L^2}$ of $u_x(\vect p_0)$
+against the converged reference. \DATA{fill}}
 \label{tab:robust}
-\small
-\begin{tabular}{lllccc}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lllcccc}
 \toprule
-Category & Setting & Value & F-p & C-p & F-Q \\
+Category & Setting & Values & F-p & C-p & deviation & iter./step \\
 \midrule
-Solid & incompressibility & mixed / displacement & & & \\
-      & momentum stab.\ $c_{\uu}$ & 0.1 / 1 / 10 / 100 & & & \\
-      & pressure stab.\ $c_p$ & 0.1 / 1 / 10 & & & \\
-Fluid & time scheme & Euler / backward & & & \\
-      & convection & upwind / linearUpwind / linear & & & \\
-Coupling & interface & D--N / Robin & & & \\
-      & acceleration & fixed $\omega$ / Aitken / IQN-ILS & & & \\
-      & $\epsilon_{\mathrm{FSI}}$ & $10^{-3}$ \dots\ $10^{-6}$ & & & \\
+Solid & incompressibility & mixed / displacement & & & & \\
+      & momentum stab.\ $c_{\uu}$ & 1 / 10 / 100 / 1000 & & & & \\
+      & pressure stab.\ $c_p$ & 0.1 / 1 / 10 & & & & \\
+Fluid & time scheme & Euler / backward & & & & \\
+      & convection & upwind / linearUpwind / linear & & & & \\
+      & mesh motion & \TODO{} & & & & \\
+Coupling & interface & D--N / Robin-type & & & & \\
+      & residual floors & $\times0.1$ / $\times1$ / $\times10$ & & & & \\
+      & acceleration & $\omega$=0.3 / 0.5 / 1 / Aitken / IQN-ILS & & & & \\
+      & $\epsilon_{\mathrm{FSI}}$ & $10^{-3}$ \dots\ $10^{-6}$ & & & & \\
+Interactions & stab.\ $\times$ mesh; accel.\ $\times$ $\dt$; floor $\times$ tol. & & & & & \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
-\RES{For each setting also: $\RED$ vs.\ baseline, FSI iterations per step,
-wall-clock.}
 
 \subsection{Computational cost}
-\RES{Wall-clock, cores, FSI iterations per step for each mesh/$\dt$;
-recommended benchmark-grade configuration balancing cost and accuracy.}
+\RES{Wall-clock, hardware, ranks, memory, FSI iterations per step for each
+mesh and $\dt$; the recommended configuration and its estimated
+uncertainty per QoI.}

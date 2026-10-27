@@ -23,10 +23,14 @@ Stabilisation & Type and factors for solid (momentum, pressure) and fluid
   to them \\
 Mesh motion & Motion solver, diffusivity, minimum cell quality reached \\
 Time integration & Schemes for solid and fluid, $\dt$, Courant number \\
-Coupling & Monolithic/partitioned, interface conditions, relaxation/acceleration,
-  tolerance, iterations per step \\
-Verification & Mesh and time-step sensitivity with QoIs and error estimates \\
-Availability & Code version, input files, meshes, output data \\
+Coupling & Monolithic/partitioned; sub-iteration sequence and predictor;
+  interface conditions and transfer; relaxation/acceleration; exact residual
+  definition, normalisation and tolerance; iterations per step; failed-step
+  policy \\
+Forcing & Activation and pressure waveforms as equations and as the released
+  tables actually used, with initial values \\
+Verification & Mesh and time-step sensitivity per QoI with convergence classification and error estimates; conservation diagnostics; iterative-error check \\
+Availability & Code commit, dependencies and patches, input files, meshes, settings manifest, output data with units and conventions, archival DOI \\
 \bottomrule
 \end{tabularx}
 \end{table}

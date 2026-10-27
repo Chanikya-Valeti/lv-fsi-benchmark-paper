@@ -20,4 +20,4 @@ notes/              planning: value assessment, reviewer risks, target journals
 Overleaf: import from GitHub, set the main document to `main.tex`, use pdfLaTeX.
 Locally: `latexmk -pdf main.tex`.
 
-Search for `\TODO{` and `\RES{` to see what is left to do.
+Search for `\TODO{`, `\RES{`, `\AUTHOR{`, `\CODECHECK{`, `\DATA{` and `\REFCHECK{` to see what is left to do; the last four are handoff markers (see `notes/review-response-2026-10-27.md`) and must not appear in a submitted version.

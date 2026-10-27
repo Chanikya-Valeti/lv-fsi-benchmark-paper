@@ -2,87 +2,103 @@
 
 % Para 1 -- why LV FSI
 Computational models of the heart are moving from research tools towards
-clinical and regulatory use \citep{Quarteroni2017,Chabiniok2016}. Within these,
-fluid--structure interaction (FSI) models of the left ventricle (LV) resolve
-the two-way coupling between the contracting myocardium and intraventricular
-blood flow, and are used to study diastolic vortex formation, intraventricular
-pressure differences, washout and thrombogenic risk, and the haemodynamic
+clinical and regulatory use \citep{Quarteroni2017,Chabiniok2016}. Among
+them, fluid--structure interaction (FSI) models of the left ventricle (LV)
+resolve the two-way coupling between the contracting myocardium and the
+intraventricular blood, and are used to study diastolic vortex formation,
+intraventricular pressure differences, washout and the haemodynamic
 consequences of altered wall mechanics \citep{Mittal2016}.
-\TODO{3--5 representative LV FSI references: ALE (e.g.\ Bucelli/Zingaro et al.),
-immersed boundary (e.g.\ Gao, Feng, Griffith), immersed/fictitious domain,
-FV/OpenFOAM-based.}
+\TODO{3--5 representative two-way myocardial LV FSI references: ALE
+(e.g.\ Bucelli/Zingaro et al.), immersed boundary (e.g.\ Gao, Feng,
+Griffith), fictitious domain, FV/OpenFOAM-based; keep prescribed-wall CFD
+and valve-only FSI separate.}
 
-% Para 2 -- reproducibility problem
-The credibility of such models rests on verification: demonstrating that the
-discrete solution converges to the solution of the stated mathematical model
-\citep{Roache1998,Oberkampf2010}. In LV FSI this is rarely shown. A survey of
-the literature (\cref{tab:survey}) shows that \TODO{X of Y} studies do not
-report the ventricular dimensions, \TODO{X of Y} report no mesh-sensitivity
-study, \TODO{X of Y} report no time-step-sensitivity study, \TODO{X of Y}
-do not state the spatial/temporal discretisation schemes, and \TODO{X of Y}
-do not state the stabilisation, the coupling algorithm or its tolerances. Results can therefore be neither reproduced nor compared across
-codes.
+% Para 2 -- reproducibility problem (bounded claim)
+The credibility of such models rests on verification: showing that the
+discrete solution converges to the solution of the stated mathematical
+model \citep{Roache1998,Oberkampf2010}. In LV FSI this is difficult to
+assess from the literature, because the information needed to reproduce a
+study is often incomplete. \Cref{tab:survey} records, for a defined set of
+two-way myocardial LV FSI studies, whether the ventricular dimensions, a
+mesh study, a time-step study, the discretisation schemes, the
+stabilisation and the coupling tolerances are reported.
+\DATA{Survey with a stated search strategy: databases, query, cutoff date,
+inclusion/exclusion rules (two-way myocardial FSI only), denominator,
+coding criteria, and treatment of supplementary material and repositories.
+Until it exists, no prevalence claim (``rarely'', ``almost never'') is made.}
 
 % Para 3 -- benchmarks that exist
 Benchmarks have played this role elsewhere. For general FSI, the
-\citet{TurekHron2006} channel-flow benchmark and the experimental benchmark of
-\citet{Hessenthaler2017} are widely used, but neither involves an active,
-anisotropic, nearly incompressible solid enclosing a cavity. For cardiac solid
-mechanics, \citet{Land2015} proposed passive inflation and active contraction
-of an idealised LV, and \citet{Arostica2025} extended this to elastodynamics
-with a visco-active Holzapfel--Ogden material, analytical fibres and
-pericardial boundary conditions, with reference solutions from nine groups.
-No equivalent exists for ventricular FSI.
-\TODO{Check and position against: experimental LV FSI benchmarks (e.g.\ the
-2026 Phys.\ Fluids immersed-particle benchmark, Unipa), Domenichini-type
-prescribed-motion LV CFD, and any recent LV FSI code-comparison.}
+\citet{TurekHron2006} channel-flow problem and the experimental benchmark
+of \citet{Hessenthaler2017} are widely used, but neither involves an
+active, anisotropic, nearly incompressible solid enclosing a cavity. For
+cardiac solid mechanics, \citet{Land2015} proposed passive inflation and
+active contraction of an idealised LV, and \citet{Arostica2025} extended
+this to elastodynamics with a visco-active Holzapfel--Ogden material,
+analytical fibres and pericardial supports, with solutions from nine
+groups. Two recent experimental frameworks measure wall motion and flow
+together in compliant ventricular phantoms --- an immersed-particle FSI
+method validated against a deformable-chamber benchmark
+\citep{Monteleone2026} and simultaneous Lagrangian measurement of wall and
+flow in a patient-averaged LV \citep{Hadar2026} --- and provide validation
+data for passive, isotropic chambers. We are not aware of a fully
+specified computational benchmark for two-way FSI of an active, anisotropic
+ventricle with a released reference configuration; the claim is bounded by
+the survey of \cref{tab:survey}.
 
-% Para 4 -- difficulties specific to cardiac FSI that a benchmark must exercise
-Cardiac FSI is numerically demanding: the solid is nearly incompressible,
-anisotropic and active; collocated discretisations of such a solid need
-stabilisation whose magnitude can stiffen the response; blood and myocardium
-have similar densities, so partitioned schemes suffer from the added-mass
-effect \citep{Causin2005}; and when the cavity is closed by kinematic
-(flow-rate) conditions, the enclosed incompressible fluid gives rise to the
-incompressibility dilemma of Dirichlet--Neumann coupling \citep{Kuttler2006}.
-The settings chosen to deal with these issues --- stabilisation factors,
-interface conditions, relaxation and tolerances --- change the answer, yet
-they are almost never reported.
+% Para 4 -- difficulties specific to cardiac FSI
+Cardiac FSI is numerically demanding. The solid is nearly incompressible,
+anisotropic and active, and collocated discretisations of it need
+stabilisation whose magnitude can stiffen the response. Blood and
+myocardium have similar densities, so partitioned schemes are exposed to
+the added-mass effect \citep{Causin2005}, although the density ratio alone
+does not quantify it. When the cavity is closed by purely kinematic
+boundary conditions, the enclosed incompressible fluid creates a
+compatibility problem for standard partitioned iterations
+\citep{Kuttler2006}. The settings chosen to deal with these issues ---
+stabilisation factors, interface conditions, residual definitions,
+relaxation and tolerances --- change the answer, and they must be reported
+for a solution to be reproducible.
 
 % Para 5 -- contribution
-This paper proposes a valve-free FSI benchmark for an idealised LV that adds
-blood flow to Benchmark~1 of \citet{Arostica2025}. Rather than a full cardiac
-cycle, it poses passive filling and active contraction as two separate
-problems, each the FSI counterpart of a solid-only AR25 case. Its
-contributions are:
+Building on our solids4foam implementation of the \citet{Arostica2025}
+benchmark \citep{s4fPR571}, this paper defines a reproducible extension to
+FSI in an idealised LV. Rather than a cardiac cycle, it poses two
+valve-free problems --- pressure-driven passive deformation and
+activation-driven contraction --- each the counterpart of a solid-only AR25
+case. The contributions are:
 \begin{enumerate}
-\item a complete, unambiguous problem definition --- geometry and port
-  dimensions, fibres, solid and fluid models, interface and boundary
-  conditions --- that requires no valve model (\cref{sec:problem});
-\item two FSI problems, passive filling and active contraction, each with a
-  solid-only counterpart solved by nine codes in AR25, so that the
-  effect of the fluid is isolated and verifiable (\cref{sec:steps});
-\item precisely defined quantities of interest and a discrepancy metric
-  compatible with \citet{Arostica2025} (\cref{sec:qoi});
-\item a complete record of the numerical setup --- solid stabilisation,
-  fluid schemes, mesh motion, interface conditions, coupling acceleration
-  and tolerances (\cref{sec:methods}) --- and systematic studies of mesh,
-  time step and each of these settings, giving grid-convergence indices,
-  a robustness map and a recommended configuration
-  (\cref{sec:verification,sec:results});
-\item open meshes, case files and reference data, and a minimum reporting
+\item a fully specified coupled problem --- geometry and port dimensions,
+  fibres, solid and fluid models with all equations and parameters written
+  out, interface and boundary conditions, initial conditions and forcing
+  tables --- that requires no valve model (\cref{sec:problem});
+\item an executable reference configuration, with the solid part inherited
+  from the verified implementation and the fluid discretisation, mesh
+  motion, interface transfer, coupling sequence, residual definitions,
+  acceleration and tolerances stated explicitly and exported as a settings
+  manifest (\cref{sec:methods});
+\item a verification methodology that separates solid cross-code
+  comparison, implementation checks and FSI solution verification, with
+  convergence classification and grid-convergence indices per quantity of
+  interest, conservation diagnostics, and a robustness study of the
+  numerical settings (\cref{sec:verification});
+\item \RES{the reference data and their estimated uncertainty}
+  (\cref{sec:results});
+\item open cases and data at a fixed commit, and a minimum reporting
   checklist for ventricular FSI (\cref{app:checklist}).
 \end{enumerate}
+A single-code reference data set is labelled as a candidate reference until
+independent solutions confirm it; a cross-code comparison, as in AR25, is
+a natural follow-up and is not a prerequisite for the problem definition.
 
 The remainder of the paper is organised as follows. \TODO{roadmap}.
 
 % ---------------------------------------------------------------------------
 \begin{table}[t]
 \centering
-\caption{Reporting practice in left-ventricular FSI studies.
+\caption{Reporting practice in two-way myocardial LV FSI studies.
 \checkmark: reported; --: not reported; (\checkmark): partially.
-\TODO{Systematic search: Scopus/WoS, ``left ventricle'' AND ``fluid-structure
-interaction'', 2010--2026; record protocol and inclusion criteria.}}
+\DATA{Systematic survey; see text for the required protocol.}}
 \label{tab:survey}
 \small
 \begin{tabular}{lccccccc}

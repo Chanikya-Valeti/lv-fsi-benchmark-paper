@@ -1,146 +1,295 @@
-\section{Reference numerical method}\label{sec:methods}
+\section{Reference implementation}\label{sec:methods}
 
-Reference solutions are computed with solids4foam \citep{Cardiff2018}
-\TODO{version / commit} on OpenFOAM \TODO{v2312/v2412}. Every setting in
-this section is given in full, and is also contained in the released case
-files, so that the solution can be reproduced exactly.
-\Cref{tab:settings} collects all settings of the baseline configuration;
-\cref{sec:ver:robust} reports how the solution and its robustness change
-when each one is varied.
-
-% ---------------------------------------------------------------------------
-\subsection{Solid solver}\label{sec:methods:solid}
-\paragraph{Formulation} Cell-centred finite volume, total Lagrangian,
-total-displacement formulation
-(\texttt{nonLinearGeometryTotalLagrangianTotalDisplacement}), material law
-\texttt{viscoActiveHolzapfelOgden}.
-\paragraph{Incompressibility} Mixed displacement--pressure formulation
-(\texttt{solvePressure true}): the volumetric term
-$\partial U/\partial J$ of the penalty energy is replaced by a cell-centred
-pressure $p_{\mathrm s}$ that satisfies the same penalty relation, so the
-material response is unchanged. The pure-displacement formulation is
-compared in \cref{sec:ver:robust}.
-\paragraph{Stabilisation} Collocated FV discretisations of the momentum
-equation and of the pressure equation require stabilisation to suppress
-checkerboard modes. Momentum: \texttt{diffStencilLaplacian}, i.e.\ the
-difference between a compact and a wide-stencil Laplacian of $\uu$ scaled by
-an implicit stiffness and a factor $c_{\uu}$. Pressure: Rhie--Chow with
-factor $c_p$ (and $c_p^{\mathrm J}$ in the Jacobian).
-\TODO{Write the stabilisation terms explicitly; state which stiffness scales
-them (shear modulus vs.\ $\kappa$) and why this matters for a material with
-$a=\SI{59}{Pa}$ and $\kappa=\SI{1e6}{Pa}$.}
-\paragraph{Non-linear and linear solvers} Newton's method via PETSc SNES with
-a matrix-free Jacobian and backtracking line search; \TODO{KSP/PC type,
-absolute/relative tolerances, maximum iterations}.
-\paragraph{Time integration} Second-order backward differentiation (BDF2)
-for $\ddot\uu$ and $\dot\uu$; the viscous term uses $\dot\EE$ from the same
-scheme. \TODO{Initialisation of BDF2 at the first step.}
+Reference solutions are computed with the solids4foam toolbox
+\citep{Cardiff2018} (executable \texttt{solids4Foam}) on OpenFOAM
+\TODO{distribution and version of the production runs} with PETSc
+\TODO{version}. \DATA{Commit of the FSI case and of solids4foam, OpenFOAM
+and PETSc versions, build options and local patches for every reported run;
+PR~\#571 reports OpenFOAM v2412 and PETSc 3.24 for its own earlier solid
+runs, which must not be assumed for the FSI runs.}
 
 % ---------------------------------------------------------------------------
-\subsection{Fluid solver}\label{sec:methods:fluid}
-PIMPLE pressure--velocity coupling on a moving mesh, \TODO{$n$ outer
-correctors, $m$ pressure correctors, non-orthogonal correctors}, with the
-Rhie--Chow-type face-flux correction for the time derivative
-(\texttt{ddtCorr}). Mesh motion: \TODO{velocity Laplacian motion solver,
-diffusivity (e.g.\ inverse distance from $\Gfsi$ or quadratic)}; the
-discrete geometric conservation law is satisfied by computing face fluxes
-from swept volumes. Schemes are listed in \cref{tab:settings}.
-
-% ---------------------------------------------------------------------------
-\subsection{Fluid--solid coupling}\label{sec:methods:coupling}
-\paragraph{Algorithm} Partitioned and strongly coupled: within each time
-step the fluid and solid solvers are iterated until the interface residual
-\begin{equation}
-r^{k} = \frac{\|\uu_{\Gfsi}^{k+1}-\uu_{\Gfsi}^{k}\|_{2}}
-             {\max_{\Gfsi}\|\uu_{\Gfsi}^{k+1}\|}
-\end{equation}
-\TODO{check the exact residual definition used by solids4foam} falls below
-$\epsilon_{\mathrm{FSI}}$ or $N_{\mathrm{FSI}}$ iterations are reached.
-\paragraph{Interface conditions} The fluid receives the interface velocity
-(Dirichlet) and the solid receives the fluid traction (Neumann). To
-counter the added-mass effect, which is strong here because
-$\rho_{\mathrm f}/\rho_{\mathrm s}\approx1.05$ \citep{Causin2005}, the
-interface pressure is imposed through a Robin-type condition
-(\texttt{elasticWallPressure}, \citealp{Tukovic2018}) with reference
-pressure $p_{\mathrm{ref}}$ and reference velocity $U_{\mathrm{ref}}$.
-\TODO{Give the Robin condition explicitly and the meaning of
-\texttt{robinPressureReference}, \texttt{robinFluxReferenceVelocity}, and of
-the \texttt{hsModel secant} option.}
-\paragraph{Acceleration} Fixed under-relaxation $\omega$, Aitken dynamic
-relaxation \citep{Kuttler2008} or IQN-ILS \citep{Degroote2009};
-\TODO{baseline choice}.
-\paragraph{Predictor} \TODO{Interface displacement extrapolated from previous
-time steps (order?)}.
-
-% ---------------------------------------------------------------------------
-\subsection{Meshes}
-Solid: the all-hexahedral O-grid meshes of the solids4foam AR25 tutorial,
-levels M1--M4 with refinement ratio $r=2$ in each direction. Fluid:
-\TODO{conforming hexahedral cavity mesh, nodes matching the solid at $\Gfsi$
-or non-matching with interpolation; state the interpolation}.
-\Cref{tab:meshes} lists the cell counts and quality metrics.
+\subsection{From the solid benchmark to the coupled problem}\label{sec:methods:inherit}
+\Cref{tab:inherit} separates what the coupled benchmark inherits from the
+existing solid implementation \citep{s4fPR571} and what this paper adds and
+freezes. The solid part is executable and verified as described in
+\cref{sec:ver:solid}; the coupled part is defined here, and its reference
+solutions are labelled candidate reference solutions until the convergence
+and conservation evidence of \cref{sec:results} supports them.
 
 \begin{table}[t]
 \centering
-\caption{Mesh levels. Solid divisions: square side $\times$ ring $\times$ wall.}
-\label{tab:meshes}
+\caption{Provenance of the benchmark components.}
+\label{tab:inherit}
 \small
-\begin{tabular}{lrrrrr}
+\begin{tabularx}{\linewidth}{XX}
 \toprule
-Level & Solid divisions & Solid cells & Fluid cells & $h_{\Gfsi}$ [mm] & max non-orth. [\si{\degree}] \\
+Inherited from PR~\#571 / AR25 & Added and frozen by this paper \\
 \midrule
-M1 & $8\times18\times3$   & \num{1920}   & \TODO{} & \TODO{} & \TODO{} \\
-M2 & $16\times36\times5$  & \num{12800}  & \TODO{} & \TODO{} & \TODO{} \\
-M3 & $32\times72\times10$ & \num{102400} & \TODO{} & \TODO{} & \TODO{} \\
-M4 & $64\times144\times20$ & \num{819200} & \TODO{} & \TODO{} & \TODO{} \\
+Solid geometry, material, fibres, activation and pressure waveforms, supports, probe points &
+Cavity mesh, cap closure, ports and tubes \\
+Executable solid tutorial and the published AR25 comparison histories &
+Fluid equations, properties, port conditions and pressure convention \\
+Solid discretisation, stabilisation and PETSc configuration &
+Fluid schemes, mesh motion, interface transfer and coupling sequence \\
+Solid verification workflow and regression test &
+Coupled reference histories, mass/energy diagnostics, FSI convergence and uncertainty \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
-\TODO{M1$\to$M2 wall divisions go 3$\to$5 (ratio not exactly 2); use the
-generalised GCI with an effective $r$ \citep{Celik2008}.}
 
 % ---------------------------------------------------------------------------
+\subsection{Solid solver}\label{sec:methods:solid}
+All values in this subsection are those of the pinned solid case
+(\texttt{benchmark1} at commit \texttt{882cf07}), which is the inherited
+baseline; the FSI runs may change the time step on the evidence of
+\cref{sec:ver:time}.
+
+\paragraph{Formulation} Cell-centred finite volume, total Lagrangian,
+total-displacement formulation
+(\texttt{nonLinearGeometryTotalLagrangianTotalDisplacement}), material law
+\texttt{viscoActiveHolzapfelOgden}. Incompressibility: mixed
+displacement--pressure formulation (\texttt{solvePressure true}), in which
+the volumetric term $U'(J)$ of \cref{eq:Psi} is replaced by a cell-centred
+pressure unknown $p_{\mathrm s}$ that satisfies the same penalty relation.
+\CODECHECK{State the sign convention of $p_{\mathrm s}$ relative to
+$U'(J)=\tfrac{\kappa}{2}(J-J^{-1})$, how it enters the stress, and the
+discrete pressure equation.}
+
+\paragraph{Stabilisation} Momentum: \texttt{diffStencilLaplacian} with
+\texttt{scaleFactor}~100, i.e.\ the difference between a compact- and a
+wide-stencil Laplacian of $\uu$, scaled by a stiffness and by $c_{\uu}=100$.
+Pressure: Rhie--Chow with $c_p=1$ and $c_p^{\mathrm J}=1$ in the Jacobian.
+The stiffness that scales the momentum stabilisation is the law's scalar
+tangent, $\mu_{\mathrm{tan}} = a+(a_f+a_s+a_{fs})/6 = \SI{3587.2}{Pa}$ for the
+baseline parameters, which excludes $\eta/\dt$ and is a small-strain
+estimate rather than a tangent of the anisotropic energy.
+\CODECHECK{Write the discrete stabilisation operators explicitly, with
+units; state whether each factor enters the residual equations or only the
+Jacobian/preconditioner; $c_p^{\mathrm J}$ in particular may affect solver
+convergence only.}
+
+\paragraph{Non-linear and linear solvers} PETSc SNES Newton with
+backtracking line search (\texttt{newtonls}, \texttt{bt}), matrix-free
+Jacobian (\texttt{snes\_mf}, \texttt{snes\_mf\_operator}),
+\texttt{snes\_rtol} $10^{-6}$, \texttt{snes\_atol} $10^{-10}$; linear solver
+LGMRES (restart 200, \texttt{ksp\_rtol} $10^{-4}$, at most 300 iterations)
+with a Schur-complement field split (lower factorisation, \texttt{a11}
+Schur preconditioner; block size 4, displacement fields 0--2, pressure
+field 3), each block preconditioned once with HYPRE BoomerAMG (strong
+threshold 0.6, one sweep up and down, one aggressive-coarsening level,
+HMIS coarsening, \texttt{ext+i} interpolation, $P_{\max}=1$, truncation
+0.3, at most 25 levels). The dictionary sets
+\texttt{snes\_max\_linear\_solve\_fail} to $10^5$, a permissive policy on
+failed linear solves; no SNES maximum iteration count is set.
+\CODECHECK{Report the resolved SNES iteration limit and the actual
+converged reasons of the production runs; set the limit explicitly in the
+released case. The displacement predictor is commented out in the
+dictionary; confirm its runtime behaviour.} The mixed formulation runs in
+serial at the pinned commit; the displacement formulation runs in
+parallel.
+
+\paragraph{Time integration} \texttt{backward} (BDF2) for both $\dot\uu$
+and $\ddot\uu$ (\texttt{ddtSchemes}, \texttt{d2dt2Schemes}). The viscous
+stress uses a first-order difference of the Green--Lagrange strain over
+the time step, $\dot\EE\approx[\EE^{n}-\EE^{n-1}]/\dt$ with
+$\EE=\tfrac12(\FF^{\mathsf T}\FF-\II)$, so the temporal accuracy of the
+solid is not formally second order; the observed order is measured, not
+assumed (\cref{sec:ver:time}). \CODECHECK{Start-up of BDF2 at the first
+step and the handling of old-time fields during FSI sub-iterations.}
+
+\paragraph{Baseline time step and output} $\dt=\SI{1}{ms}$ on $[0,1]$\,s
+(the inherited solid case); fields written every \SI{10}{ms} in ASCII with
+8 significant digits; point displacements by \texttt{solidPointDisplacement}
+at $\vect p_0$, $\vect p_1$ every step.
+
+% ---------------------------------------------------------------------------
+\subsection{Fluid solver}\label{sec:methods:fluid}
+\DATA{All values below are from the preliminary \texttt{leftVentricle} FSI
+tutorial and are provisional until the benchmark FSI case is frozen.}
+PIMPLE pressure--velocity coupling (\texttt{pimpleFluid}) on a moving mesh
+with the flux correction for the time derivative (\texttt{ddtCorr true});
+\TODO{outer correctors, pressure correctors, non-orthogonal correctors,
+residual controls}. Pressure is kinematic (\si{m^2/s^2}) in the fluid
+solver; all pressures in this paper are reported in \si{Pa}. Mesh motion:
+\TODO{motion solver, diffusivity, moving and fixed patches}; face fluxes are
+computed from swept volumes. Schemes: implicit Euler in time (baseline of
+the tutorial; \texttt{backward} is tested), Gauss linear gradients,
+\texttt{linearUpwind grad(U)} convection, Gauss linear corrected
+Laplacians. Linear solvers: \TODO{p: GAMG, tolerance; U: PBiCGStab,
+tolerance}.
+
+% ---------------------------------------------------------------------------
+\subsection{Fluid--solid coupling}\label{sec:methods:coupling}
+\paragraph{Algorithm} Partitioned and strongly coupled, Dirichlet--Neumann:
+the fluid receives the interface velocity and the solid receives the fluid
+traction. One time step proceeds as in \cref{alg:coupling}.
+\CODECHECK{Verify every line of \cref{alg:coupling} against the pinned
+\texttt{fluidSolidInterface} implementation, in particular the predictor,
+where the mesh velocity is evaluated, when old-time fields are advanced,
+and whether the residual is formed from the unrelaxed fixed-point update.}
+
+\begin{table}[t]
+\centering
+\caption{Coupling sequence for one time step (to be verified against the
+implementation).}
+\label{alg:coupling}
+\small
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+1 & Predict the interface displacement $\tilde\uu^{0}_{\Gfsi}$ from previous
+    time steps (\TODO{order}). \\
+2 & For $k=0,1,\dots$ until converged or $k=N_{\mathrm{FSI}}$: \\
+2a & Move the fluid mesh to $\tilde\uu^{k}_{\Gfsi}$; compute $\ww$ and swept-volume fluxes. \\
+2b & Solve the fluid problem with $\vv=\ww$ on $\Gfsi$ (velocity from the
+    time scheme applied to $\tilde\uu^{k}_{\Gfsi}$). \\
+2c & Evaluate $\sig_{\mathrm f}\nn_{\mathrm f}$ on the fluid side; map to the
+    solid interface faces (\TODO{mapping; current or reference areas}). \\
+2d & Solve the solid problem with this traction; obtain $\uu^{k+1}_{\Gfsi}$. \\
+2e & Residual $r^{k} = \uu^{k+1}_{\Gfsi}-\tilde\uu^{k}_{\Gfsi}$ (unrelaxed fixed-point residual). \\
+2f & Convergence test (\cref{eq:residual}); if not converged, accelerate:
+    $\tilde\uu^{k+1}_{\Gfsi} = \tilde\uu^{k}_{\Gfsi}+\omega_k r^{k}$ (fixed or
+    Aitken $\omega_k$) or the IQN-ILS update. \\
+3 & Accept the step and advance old-time fields; or, on non-convergence,
+    apply the failure policy (\cref{sec:methods:failure}). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Interface pressure condition} The pressure boundary condition
+on the fluid side of $\Gfsi$ is \texttt{elasticWallPressure} with
+\texttt{hsModel secant} \citep{Tukovic2018}, a Robin-type condition that
+accounts for the local interface compliance to counter the added-mass
+effect; blood and myocardium have similar densities
+($\rho_{\mathrm f}/\rho_{\mathrm s}=1.05$), although geometry, constraints
+and the structural response also govern the strength of the effect
+\citep{Causin2005}. \CODECHECK{Write the implemented Robin equation and its
+coefficients, and the secant model of the interface compliance, from the
+pinned source.}
+
+\paragraph{Convergence criterion} The tutorial sets
+\texttt{outerCorrTolerance} $5\times10^{-5}$ and \texttt{nOuterCorr} 30. The
+entries \texttt{robinPressureReference} ($0.1$, in the fluid pressure
+units) and \texttt{robinFluxReferenceVelocity} (\SI{0.01}{m/s}) are lower
+bounds on the scales used to normalise the pressure-change and
+interface-flux residuals; they are stopping-criterion parameters, not Robin
+impedance coefficients, and moving them changes the admissible absolute
+residual rather than the physics. The displacement residual of the
+implementation is \CODECHECK{exact norm, support (points or faces), area
+weighting, reference scale and floor}; the form
+\begin{equation}
+\|r^{k}\|_{\mathrm{rel}} =
+\frac{\|r^{k}\|_{2}}{\max\bigl(\max_{\Gfsi}\|\uu^{k+1}_{\Gfsi}\|,\;u_{\mathrm{floor}}\bigr)}
+\le \epsilon_{\mathrm{FSI}}
+\label{eq:residual}
+\end{equation}
+is a placeholder: an unweighted 2-norm scales with the number of interface
+nodes and its denominator vanishes at rest, so the manuscript will report
+the implemented definition and, if a mesh-independent diagnostic is added,
+label it as a new diagnostic.
+
+\paragraph{Acceleration} The tutorial uses \texttt{fixedRelaxation} with
+$\omega=1$, i.e.\ no relaxation. The baseline for the reference runs will be
+chosen from the pilot runs among fixed relaxation, Aitken dynamic
+relaxation \citep{Kuttler2008} and IQN-ILS \citep{Degroote2009}
+(\cref{sec:ver:robust}). \CODECHECK{Confirm that each method is available
+and compatible with \texttt{elasticWallPressure} at the pinned version.}
+
+\paragraph{Failure policy}\label{sec:methods:failure}
+A time step that reaches $N_{\mathrm{FSI}}$ iterations without meeting
+\cref{eq:residual} has not converged. \AUTHOR{Policy: terminate the run,
+or halve $\dt$ and repeat the step (with a minimum $\dt$). A run that
+reaches the end time with unconverged steps or failed inner solves is not a
+successful reference run; the success criterion of
+\cref{sec:ver:robust} requires completion \emph{and} convergence of every
+step \emph{and} the conservation and mesh-quality checks.}
+
+% ---------------------------------------------------------------------------
+\subsection{Meshes}
+Solid: the all-hexahedral O-grid meshes of the solid case, levels M1--M4.
+Fluid: \AUTHOR{conforming hexahedral cavity mesh, nodes matching the solid
+at $\Gfsi$ or non-matching with interpolation; mesh of the cap, ports and
+tubes}. \Cref{tab:meshes} lists cell counts and quality.
+
+\begin{table}[t]
+\centering
+\caption{Mesh levels. Solid divisions: square side $\times$ ring $\times$
+wall. M1$\to$M2 is not a uniform factor-2 refinement (3 and 5 cells through
+the wall; effective 3-D ratio $(12800/1920)^{1/3}=1.88$); M2$\to$M3 and
+M3$\to$M4 are.}
+\label{tab:meshes}
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+Level & Solid divisions & Solid cells & Fluid cells & $h_{\Gfsi}$ [mm] & max non-orth.\ [\si{\degree}] \\
+\midrule
+M1 & $8\times18\times3$    & \num{1920}   & \DATA{} & \DATA{} & \DATA{} \\
+M2 & $16\times36\times5$   & \num{12800}  & \DATA{} & \DATA{} & \DATA{} \\
+M3 & $32\times72\times10$  & \num{102400} & \DATA{} & \DATA{} & \DATA{} \\
+M4 & $64\times144\times20$ & \num{819200} & \DATA{} & \DATA{} & \DATA{} \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+% ---------------------------------------------------------------------------
+\subsection{Settings manifest}\label{sec:methods:manifest}
+Prose and configuration drift apart; the definitive record of each
+reference run is a machine-readable manifest exported from the case at run
+time, released with the data: solver versions and commits; every linear and
+non-linear tolerance and iteration limit, with resolved values in place of
+``default''; the FSI residual norms, reference scales, floors, tolerance and
+maximum iterations; the relaxation or acceleration history and bounds; the
+interface condition and its coefficients; mapping method; pressure units;
+mesh-motion controls; all time schemes and start-up choices; time step;
+output sampling; and the rejected-step policy. \Cref{tab:settings} is the
+readable summary of the baseline; the dictionaries are the record.
+
 \begin{table}[p]
 \centering
-\caption{Complete numerical settings of the baseline configuration
-(OpenFOAM/solids4foam keywords in typewriter font). Starred entries are
-varied in \cref{sec:ver:robust}.}
+\caption{Baseline numerical settings. ``Solid'' values are those of the
+pinned solid case; ``fluid'' and ``coupling'' values are those of the
+preliminary FSI tutorial and are provisional. Starred entries are varied
+in \cref{sec:ver:robust}.}
 \label{tab:settings}
 \scriptsize
 \begin{tabularx}{\linewidth}{lX}
 \toprule
-\multicolumn{2}{l}{\textbf{Solid}} \\
-Solid model & \texttt{nonLinearGeometryTotalLagrangianTotalDisplacement} \\
+\multicolumn{2}{l}{\textbf{Solid (pinned)}} \\
+Solid model & \texttt{nonLinearGeometryTotalLagrangianTotalDisplacement}; \texttt{PETScSNES} \\
 Incompressibility$^*$ & mixed $\uu$--$p$ (\texttt{solvePressure true}) \\
-Momentum stabilisation$^*$ & \texttt{diffStencilLaplacian}, $c_{\uu}=100$ \\
-Pressure stabilisation$^*$ & Rhie--Chow, $c_p = 1$, $c_p^{\mathrm J}=1$ \\
-Gradient & \texttt{leastSquaresS4f} \\
+Momentum stabilisation$^*$ & \texttt{diffStencilLaplacian}, $c_{\uu}=100$; stiffness scale $\mu_{\mathrm{tan}}=\SI{3587.2}{Pa}$ \\
+Pressure stabilisation$^*$ & Rhie--Chow, $c_p=1$, $c_p^{\mathrm J}=1$ \\
+Gradient & \texttt{leastSquaresS4f} (\texttt{grad(t)}: \texttt{pointCellsLeastSquares}, fibre pre-processing only) \\
+Divergence / interpolation & Gauss linear / linear \\
 Laplacian / snGrad & Gauss linear corrected / corrected \\
-Time scheme ($\ddot\uu$, $\dot\uu$)$^*$ & \texttt{backward} (BDF2) \\
-Non-linear solver & PETSc SNES Newton, matrix-free Jacobian, backtracking line search \\
-Linear solver & \TODO{KSP / PC} \\
-Tolerances & \TODO{SNES abs/rel}, \TODO{KSP rel} \\
+Time schemes$^*$ & \texttt{backward} for $\dot\uu$ and $\ddot\uu$; viscous $\dot\EE$ first-order over $\dt$ \\
+Non-linear solver & SNES \texttt{newtonls}, \texttt{bt}; \texttt{snes\_mf}, \texttt{snes\_mf\_operator}; rtol $10^{-6}$, atol $10^{-10}$; \texttt{max\_linear\_solve\_fail} $10^{5}$; max.\ iterations \CODECHECK{resolved default} \\
+Linear solver & LGMRES, restart 200, rtol $10^{-4}$, max.\ 300 \\
+Preconditioner & field split, Schur, lower, \texttt{a11}; blocks: \texttt{preonly} + BoomerAMG (1 iteration, threshold 0.6, 1/1 sweeps, agg\_nl 1, paths 1, 25 levels, HMIS, \texttt{ext+i}, $P_{\max}$ 1, trunc.\ 0.3) \\
+Fibre coordinate $\bar t$ & PCG/FDIC, tolerance $10^{-12}$, relTol 0, max.\ 1000 \\
+Time step / output & $\dt=\SI{1}{ms}$; fields every \SI{10}{ms}, ASCII, 8 digits \\
+Supports & \texttt{solidSpringDashpot}: epi normal $10^{8}$\,Pa/m, $5\times10^{3}$\,Pa\,s/m, tangential 0; base all $10^{5}$\,Pa/m, $5\times10^{3}$\,Pa\,s/m \\
+Solid-only endocardium & \texttt{solidTraction}, pressure from \texttt{constant/timeVsPressure}, zero traction \\
+Execution & mixed formulation serial; displacement formulation parallel \\
 \midrule
-\multicolumn{2}{l}{\textbf{Fluid}} \\
-Algorithm & PIMPLE, \texttt{ddtCorr true}, \TODO{nOuter, nCorr, nNonOrthCorr} \\
-Time scheme$^*$ & \TODO{Euler (current) $\to$ backward} \\
-Gradient & Gauss linear \\
-Convection$^*$ & Gauss linearUpwind grad(U) \\
+\multicolumn{2}{l}{\textbf{Fluid (provisional)}} \\
+Algorithm & \texttt{pimpleFluid}, \texttt{ddtCorr true}, \TODO{nOuter, nCorr, nNonOrthCorr, residual controls} \\
+Time scheme$^*$ & Euler (tutorial); \texttt{backward} tested \\
+Gradient / convection$^*$ & Gauss linear / \texttt{linearUpwind grad(U)} \\
 Laplacian / snGrad & Gauss linear corrected / corrected \\
-Linear solvers & \TODO{p: GAMG, tol; U: smoothSolver/PBiCGStab, tol} \\
-Mesh motion$^*$ & \TODO{solver, diffusivity} \\
+Linear solvers & \TODO{p: GAMG, tol; U: PBiCGStab, tol} \\
+Mesh motion$^*$ & \TODO{solver, diffusivity, moving/fixed patches, quality limits} \\
+Properties & $\rho_{\mathrm f}=\SI{1050}{kg/m^3}$, $\nu_{\mathrm f}=\SI{3.333e-6}{m^2/s}$; pressure kinematic in the solver \\
 \midrule
-\multicolumn{2}{l}{\textbf{Coupling}} \\
-Scheme & partitioned, strongly coupled \\
-Interface pressure & \texttt{elasticWallPressure} (Robin), \texttt{hsModel secant} \\
-Robin parameters$^*$ & $p_{\mathrm{ref}}=0.1$, $U_{\mathrm{ref}}=\SI{0.01}{m/s}$ \TODO{units/meaning} \\
-Acceleration$^*$ & \texttt{fixedRelaxation}, $\omega = 1.0$ \\
-Tolerance$^*$ & $\epsilon_{\mathrm{FSI}} = \num{5e-5}$ \\
-Max.\ iterations & $N_{\mathrm{FSI}} = 30$ \\
-\midrule
-\multicolumn{2}{l}{\textbf{Time}} \\
-Time step$^*$ & $\dt = \TODO{}$ (current tutorial: \SI{5e-5}{s}) \\
-End time & \SI{1}{s} \\
+\multicolumn{2}{l}{\textbf{Coupling (provisional)}} \\
+Scheme & partitioned, strongly coupled, Dirichlet--Neumann \\
+Interface pressure & \texttt{elasticWallPressure}, \texttt{hsModel secant} \\
+Residual scales$^*$ & \texttt{robinPressureReference} 0.1 (fluid pressure units), \texttt{robinFluxReferenceVelocity} \SI{0.01}{m/s} (normalisation floors) \\
+Acceleration$^*$ & \texttt{fixedRelaxation}, $\omega=1$ (no relaxation) \\
+Tolerance / max.\ iterations$^*$ & \texttt{outerCorrTolerance} $5\times10^{-5}$; \texttt{nOuterCorr} 30 \\
+Failure policy & \AUTHOR{} \\
+Time step$^*$ & tutorial \SI{5e-5}{s}; benchmark value from \cref{sec:ver:time} \\
 \bottomrule
 \end{tabularx}
 \end{table}

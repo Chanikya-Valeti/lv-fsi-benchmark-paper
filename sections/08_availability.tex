@@ -1,7 +1,11 @@
-The benchmark cases are distributed as solids4foam tutorials
-(\texttt{tutorials/solids/hyperelasticity/ArosticaEtAl2025} and
-\texttt{tutorials/fluidSolidInteraction/\TODO{name}}) at
-\url{https://github.com/solids4foam/solids4foam}. Meshes, reference time
-series (CSV) and post-processing scripts are archived at
-\TODO{Zenodo DOI}. The AR25 reference solutions are those of the
-cardiac-benchmark-toolkit (MIT licence).
+The solid benchmark case is the solids4foam tutorial of PR~\#571
+\citep{s4fPR571} (\texttt{tutorials/solids/hyperelasticity/ArosticaEtAl2025},
+pinned commit \texttt{882cf07}). \DATA{FSI case: repository, path and
+commit; archival DOI.} The reproducibility package comprises: versioned
+geometry and meshes with boundary and fibre identifiers; executable cases;
+frozen dependencies and local patches; the commands to reproduce each run;
+the generated forcing tables; raw and processed QoI time series (CSV, with
+units, time convention and sign conventions); convergence and failure logs;
+post-processing scripts; a per-run settings manifest; and licences. The
+AR25 reference solutions are those of the cardiac-benchmark-toolkit (MIT
+licence).
