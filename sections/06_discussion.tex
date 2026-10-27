@@ -1,39 +1,50 @@
 \section{Discussion}\label{sec:discussion}
 
 \subsection{What the benchmark tests}
-Problem S verifies the anisotropic, active, nearly incompressible solid
-against nine independent codes. Problems F and C add the fluid while keeping
-a solid-only reference: the difference between each FSI solution and its AR25
-counterpart measures the effect of the blood, and is itself a quantity other
-codes can reproduce. Problem F exercises the added-mass instability under
-passive loading ($\rho_{\mathrm f}/\rho_{\mathrm s}\approx1$) and the
-formation of the filling vortex; Problem C exercises active, fibre-driven
-deformation that pushes the fluid out, with large wall thickening and twist
-that challenge the mesh motion.
+Problem~S compares the anisotropic, active, nearly incompressible solid
+with nine independent numerical solutions. Problems~F and~C add the fluid
+while each keeps a solid-only reference problem with the same waveform.
+Problem~F exposes the coupling to the added-mass effect under passive
+loading and produces the filling vortex; Problem~C drives the fluid out by
+fibre-driven contraction, with wall thickening and twist that challenge the
+mesh motion. The coupled problems are verified by their own convergence and
+conservation evidence; the coupled-minus-solid-only difference is a
+comparison of two loading models and is reported as such.
 
 \subsection{Pressure-driven vs.\ flow-driven ports}\label{sec:disc:dilemma}
-\TODO{Discuss F-p vs.\ F-Q: in F-Q the cavity volume is imposed, the pressure
-acts as a Lagrange multiplier, and Dirichlet--Neumann partitioned coupling
-fails without a volume constraint or a Robin interface condition
-\citep{Kuttler2006}. Show how the Robin condition in solids4foam handles it
-and the cost in coupling iterations. Monolithic codes are unaffected.}
+\TODO{From the runs: in F-p and C-p the cavity volume is an output; in F-Q
+it is imposed and the cavity pressure is determined by the solid alone,
+so that standard Dirichlet--Neumann iterations face a compatibility
+problem \citep{Kuttler2006}. Report how the Robin-type interface condition
+behaves here and the cost in coupling iterations. Monolithic formulations
+also need compatible constraints and suitable solvers; the difficulty is
+not specific to partitioning, only more visible in it.}
 
 \subsection{Recommended numerical settings}
-\TODO{From the robustness map: which stabilisation factors give mesh-converging
-results without artificial stiffening; which coupling acceleration and tolerance
-give the best accuracy per cost; minimum mesh and $\dt$ for each QoI. Which QoIs
-converge quickly (global: $V$, $\bar p$, displacements) and which slowly
-(local: $\Delta p_{\mathrm{IVPD}}$, vortex metrics, $E_k$).}
+\TODO{From the robustness map, against the converged reference: which
+stabilisation factors give mesh-converging results without artificial
+stiffening; which acceleration and tolerance give the best accuracy per
+cost; minimum mesh and $\dt$ per QoI. Which QoIs converge quickly (global:
+$V$, $\bar p$, displacements) and which slowly (local:
+$\Delta p_{\mathrm{IVPD}}$, vortex metrics, $E_k$). Distinguish solver
+completion from accepted accuracy.}
 
-\subsection{Limitations}
-Filling and contraction are posed separately, not as a closed cycle;
-idealised geometry without papillary muscles or trabeculae; no valve
-leaflets; Newtonian, laminar blood; activation prescribed rather than
-electrophysiology-driven. The AR25 ventricle is large ($V_0=\SI{168}{mL}$
-unloaded), more representative of a dilated than a healthy LV, and the AR25
-pressure waveform reaches systolic levels. These are deliberate choices that
-keep the benchmark unambiguous and comparable with AR25; a closed-cycle
-benchmark with lumped-parameter circulation is a natural next step.
+\subsection{Scope and limitations}
+These problems are intended for numerical verification and
+reproducibility, not for the reconstruction of a cardiac cycle. The
+idealised geometry, the separate loading phases and the permanently open
+ports provide controlled conditions for comparing numerical solutions;
+flow reversal at the open port is permitted unless excluded by the stated
+boundary condition. The geometry is that of AR25, defined numerically
+rather than from imaging; its unloaded cavity volume of \SI{168}{mL} is
+not a loaded clinical volume and is not given an anatomical
+interpretation. The passive pressure waveform of AR25 reaches systolic
+levels, so Problem~F is a stress test with that waveform, not physiological
+filling. Blood is Newtonian and no turbulence model is used; activation is
+prescribed rather than electrophysiology-driven; the viscous term of the
+solid is first order in time. A closed-cycle benchmark with a
+lumped-parameter circulation, and a cross-code comparison, are natural
+next steps.
 
 \subsection{Recommendations for reporting}
 \Cref{app:checklist} lists the minimum information that, in our view, a

@@ -1,9 +1,10 @@
 \section{Benchmark problem definition}\label{sec:problem}
 
-All quantities are in SI units. Wherever possible the definitions of
-\citet{Arostica2025} (hereafter AR25) are reused verbatim, so that the solid
-sub-problem is identical to their Benchmark~1 and each FSI problem below has a
-solid-only counterpart for which nine reference solutions already exist.
+All quantities are in SI units. The solid sub-problem is that of Benchmark~1
+of \citet{Arostica2025} (hereafter AR25), restated here in full so that the
+manuscript is self-contained; the implementation is the solids4foam case of
+PR~\#571 \citep{s4fPR571}. Where the present text and AR25 differ in
+notation, AR25's symbols are given in brackets.
 
 % ===========================================================================
 \subsection{Geometry}\label{sec:geometry}
@@ -15,25 +16,51 @@ with long axis along $x$ and apex at $x<0$:
  r_{\mathrm{short}}\sin\mu\cos\theta,\;
  r_{\mathrm{short}}\sin\mu\sin\theta\bigr),\qquad \theta\in[-\pi,\pi],
 \end{equation}
-with the dimensions of \cref{tab:geometry}. The base $\Gbase$ joins the
-endocardial and epicardial rims by a straight line in each meridian plane.
+with the dimensions of \cref{tab:geometry}. The endocardial and epicardial
+rims lie in two different planes ($x=\SI{26.47}{mm}$ and $x=\SI{24.25}{mm}$);
+the solid base $\Gbase$ is the annular surface joining them by a straight
+line in each meridian plane, so it is a shallow cone, not a plane.
+For the endocardial ellipsoid, with $a=r_{\mathrm{long}}$, $b=r_{\mathrm{short}}$
+and $c = 5a/17$ the rim coordinate, the enclosed volume between the apex and
+the rim plane is
+$V_0 = \pi b^2\bigl[c - c^3/(3a^2) + 2a/3\bigr] = \SI{168.29}{mL}$.
 
-\paragraph{Fluid domain $\Of$} The LV cavity enclosed by $\Gendo$ and closed at
-the endocardial rim by the planar cap $\Gcap$ ($x = x_{\mathrm{cap}}$). The cap
-contains an inflow (mitral) port $\Gin$ and an outflow (aortic) port $\Gout$,
-both circular and fixed in space; the rest of the cap,
-$\Gcap\setminus(\Gin\cup\Gout)$, is a no-slip wall.
-\TODO{Confirm port radii/centres and whether short inflow/outflow tubes are
-extruded from the cap (recommended: tube length $\geq 2D$ to keep the open
-boundary away from the vortex; state it). Values below are a proposal.}
-\TODO{State how the cap-wall/endocardium junction moves (cap rim follows the
-endocardial rim via mesh motion; cap remains planar).}
+\paragraph{Fluid domain $\Of$} The cavity enclosed by $\Gendo$ and closed at
+the endocardial rim by a cap $\Gcap$. The cap contains an inflow (mitral)
+port $\Gin$ and an outflow (aortic) port $\Gout$, both circular; the rest of
+the cap, $\Gcap\setminus(\Gin\cup\Gout)$, is an impermeable wall.
+
+\AUTHOR{Cap kinematics. The solid base rests on springs
+($\alpha_{\mathrm{top}}=\SI{1e5}{Pa/m}$), so the endocardial rim moves
+axially and non-uniformly during loading, while the ports are most easily
+kept fixed in space. A planar cap with fixed ports and a rim that follows
+the endocardium is not kinematically consistent. Three options:
+(i) the cap is a deformable artificial fluid wall whose nodes move with a
+prescribed interpolation between the moving rim and the fixed port edges
+(wall velocity equal to the cap velocity; no structural stiffness; the
+fluid reaction on the cap is not transmitted to the solid);
+(ii) ports move rigidly with the mean rim displacement, and the cap is
+planar in the moving frame;
+(iii) the rim is constrained (e.g.\ $u_x=0$ on $\Gbase$), in which case the
+solid problem is no longer AR25's and a solid-only control with the same
+constraint must be added, with the original AR25 case kept as a separate
+verification. First inspect the basal displacement in Problem~S, then
+decide. State the chosen map $\vect x_{\mathrm{cap}}(\vect X,t)$ and
+$\ww$ on $\Gcap$ explicitly.}
+
+\AUTHOR{Ports. Radii, centres and whether short tubes are extruded from
+the cap. With the proposed values the radial clearance to the rim is
+\SI{1.4}{mm} (inflow) and \SI{1.9}{mm} (outflow) and the edge-to-edge gap is
+\SI{4.5}{mm}; these narrow regions need mesh-quality attention and do not
+guarantee clearance after deformation. Tube length is a proposal (a few
+diameters) until boundary independence is shown.}
 
 \begin{table}[t]
 \centering
-\caption{Geometry. Myocardial dimensions are those of AR25; derived values are
-for the unloaded reference configuration.}
+\caption{Geometry. Myocardial dimensions are those of AR25; derived values
+are for the unloaded reference configuration. Port values are proposals.}
 \label{tab:geometry}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 Quantity & Symbol & Value \\
@@ -42,53 +69,132 @@ Endocardium, short / long semi-axis & $r_{\mathrm{short}}^{\mathrm{endo}}, r_{\m
 Endocardium, $\mu$ range & & $[-\pi,\,-\arccos(5/17)]$ \\
 Epicardium, short / long semi-axis & $r_{\mathrm{short}}^{\mathrm{epi}}, r_{\mathrm{long}}^{\mathrm{epi}}$ & \SI{35}{mm}, \SI{97}{mm} \\
 Epicardium, $\mu$ range & & $[-\pi,\,-\arccos(5/20)]$ \\
-Base plane, endocardial rim & $x_{\mathrm{cap}}$, $r_{\mathrm{cap}}$ & \SI{26.47}{mm}, \SI{23.89}{mm} \\
-Base plane, epicardial rim & & \SI{24.25}{mm}, \SI{33.89}{mm} \\
-Cavity volume (reference) & $V_0$ & \SI{168.3}{mL} \\
+Endocardial rim plane / radius & $x_{\mathrm{cap}}$, $r_{\mathrm{cap}}$ & \SI{26.47}{mm}, \SI{23.89}{mm} \\
+Epicardial rim plane / radius & & \SI{24.25}{mm}, \SI{33.89}{mm} \\
+Cavity volume to the rim plane & $V_0$ & \SI{168.29}{mL} \\
 Wall thickness, equator / apex & & \SI{10}{mm} / \SI{7}{mm} \\
 \midrule
-Inflow port radius / centre & $R_{\mathrm{in}}$, $\vect{c}_{\mathrm{in}}$ & \TODO{\SI{11}{mm}, $(x_{\mathrm{cap}}, +11.5, 0)$\,mm} \\
-Outflow port radius / centre & $R_{\mathrm{out}}$, $\vect{c}_{\mathrm{out}}$ & \TODO{\SI{9}{mm}, $(x_{\mathrm{cap}}, -13, 0)$\,mm} \\
+Inflow port radius / centre $(y,z)$ & $R_{\mathrm{in}}$, $\vect c_{\mathrm{in}}$ & \AUTHOR{\SI{11}{mm}; $(+11.5, 0)$\,mm} \\
+Outflow port radius / centre $(y,z)$ & $R_{\mathrm{out}}$, $\vect c_{\mathrm{out}}$ & \AUTHOR{\SI{9}{mm}; $(-13, 0)$\,mm} \\
+Tube length & $L_{\mathrm{tube}}$ & \AUTHOR{} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \begin{figure}[t]
 \centering
 \fbox{\parbox[c][5cm][c]{0.9\linewidth}{\centering
-\TODO{Fig.~1: (a) myocardium with $\Gendo,\Gepi,\Gbase$, points $\vect{p}_0,\vect{p}_1$;
-(b) fluid domain with $\Gcap,\Gin,\Gout$; (c) fibre and sheet fields;
-(d) cut through solid and fluid meshes M1--M4.}}}
+\TODO{Fig.~1: (a) myocardium with $\Gendo,\Gepi,\Gbase$, axes, points
+$\vect{p}_0,\vect{p}_1$; (b) fluid domain with $\Gcap,\Gin,\Gout$ and the
+rim/port treatment; (c) fibre and sheet fields; (d) cut through solid and
+fluid meshes M1--M4.}}}
 \caption{Benchmark geometry, boundaries and meshes.}
 \label{fig:geometry}
 \end{figure}
 
 % ===========================================================================
-\subsection{Fibre architecture}
-Fibres $\f$ and sheets $\s$ follow AR25 Section~3.2 exactly: a transmural
+\subsection{Fibre architecture}\label{sec:fibres}
+Fibres $\f$ and sheets $\s$ follow AR25 Section~3.2: a transmural
 coordinate $\bar t$ from $\Delta\bar t=0$ ($\bar t=0$ on $\Gendo$, $1$ on
-$\Gepi$, zero flux on $\Gbase$), an ellipsoidal basis with interpolated radii,
-and a helix angle $\alpha(\bar t) = -60^\circ + 120^\circ\,\bar t$.
+$\Gepi$, zero flux on $\Gbase$), the ellipsoidal basis $(\vect e_\mu,\vect e_\theta)$
+with radii interpolated linearly in $\bar t$, and
+\begin{equation}
+\begin{aligned}
+\f &= \sin\varphi\,\vect e_\mu + \cos\varphi\,\vect e_\theta,\qquad
+\vect n_0 = \frac{\vect e_\mu\times\vect e_\theta}{\|\vect e_\mu\times\vect e_\theta\|},\qquad
+\s = \frac{\f\times\vect n_0}{\|\f\times\vect n_0\|},\\
+\varphi(\bar t) &= \varphi_{\mathrm{endo}} + (\varphi_{\mathrm{epi}}-\varphi_{\mathrm{endo}})\,\bar t,
+\end{aligned}
+\end{equation}
+with helix angles $\varphi_{\mathrm{endo}}=-60^\circ$,
+$\varphi_{\mathrm{epi}}=+60^\circ$ (AR25: $\alpha_{\mathrm{endo}},\alpha_{\mathrm{epi}}$;
+renamed here to avoid a clash with the epicardial spring stiffness
+$\alpha_{\mathrm{epi}}$). Orthonormality of $(\f,\s,\vect n_0)$ and the
+treatment at the apex, where $\vect e_\theta$ is undefined, are checked
+numerically (\cref{sec:ver:impl}).
 
 % ===========================================================================
 \subsection{Solid model}\label{sec:solid}
-In the reference configuration $\Os$, the displacement $\uu$ satisfies
+With $\FF=\II+\Grad\uu$, $J=\det\FF$, $\CC=\FF^{\mathsf T}\FF$,
+$\EE=\tfrac12(\CC-\II)$ and $\PP=\FF\SSS$, the displacement satisfies
 \begin{equation}
-\rho_{\mathrm{s}}\,\ddot{\uu} - \Div\PP = \vect 0 \quad\text{in } \Os,
-\qquad \PP = \FF\SSS,
+\rho_{\mathrm{s}}\,\ddot{\uu} - \Div\PP = \vect 0 \quad\text{in } \Os.
 \end{equation}
-with the visco-active Holzapfel--Ogden second Piola--Kirchhoff stress of AR25
-(their eqs.~2--6):
+The second Piola--Kirchhoff stress is (AR25 eq.~2)
 \begin{equation}
-\SSS = \frac{\partial\Psi_{\mathrm{aniso}}}{\partial\EE}
-     + \eta\,\dot{\EE} + \tau(t)\,\f\otimes\f,
+\SSS = \frac{\partial\Psi}{\partial\EE} + \eta\,\dot{\EE} + \tau(t)\,\f\otimes\f,
+\label{eq:S}
 \end{equation}
-where $\Psi_{\mathrm{aniso}}$ includes the smooth fibre-compression switch
-($k=100$) and the volumetric penalty $\tfrac{\kappa}{4}(J^2-1-2\ln J)$, and the
-active stress $\tau(t)$ solves AR25 eq.~(5) with the parameters of their
-Table~3 (unchanged timing, $t_{\mathrm{sys}}=\SI{0.16}{s}$,
-$t_{\mathrm{dias}}=\SI{0.484}{s}$). All parameters are listed in
-\cref{app:parameters}.
+with the invariants
+$\bar I_1 = J^{-2/3}\operatorname{tr}\CC$,
+$I_{4f} = \f\cdot\CC\f$, $I_{4s} = \s\cdot\CC\s$, $I_{8fs} = \f\cdot\CC\s$
+(only the isotropic invariant is isochoric) and the energy (AR25 eq.~3)
+\begin{align}
+\Psi &= \frac{a}{2b}\bigl[e^{b(\bar I_1-3)}-1\bigr]
+ + \sum_{i\in\{f,s\}}\frac{a_i}{2b_i}\,\chi(I_{4i})\bigl[e^{b_i(I_{4i}-1)^2}-1\bigr]
+ \nonumber\\
+ &\quad + \frac{a_{fs}}{2b_{fs}}\bigl[e^{b_{fs}I_{8fs}^2}-1\bigr]
+ + \frac{\kappa}{4}\bigl[J^2-1-2\ln J\bigr],
+\label{eq:Psi}\\
+\chi(x) &= \frac{1}{1+e^{-k(x-1)}},\qquad k = 100.
+\end{align}
+The smooth switch $\chi$ is the logistic approximation proposed by AR25 to
+the Heaviside switch of their printed energy; the two are not identical
+functions, and the benchmark specifies the logistic form, including the
+derivative $\chi'$ in $\partial\Psi/\partial\EE$. The constant $-1$ in the
+first bracket fixes the energy at $\CC=\II$ and does not change the stress.
+The volumetric term gives $U'(J) = \tfrac{\kappa}{2}(J-J^{-1})$; the
+material is nearly, not exactly, incompressible, and $J-1$ is reported as a
+QoI.
+
+\paragraph{Active stress} With $\Splus(z) = \tfrac12[1+\tanh(z/\gamma)]$,
+$\Sminus(z) = \tfrac12[1-\tanh(z/\gamma)]$ and $\pos{x}=\max(x,0)$
+(AR25 eqs.~5--6; the activation function is written $\aact$ here to avoid
+confusion with the material coefficient $a$):
+\begin{equation}
+\begin{aligned}
+f(t) &= \Splus(t-t_{\mathrm{sys}})\,\Sminus(t-t_{\mathrm{dias}}),\qquad
+\aact(t) = \alpha_{\max} f(t) + \alpha_{\min}\bigl[1-f(t)\bigr],\\
+\dot\tau &= -|\aact(t)|\,\tau + \sigma_0\,\pos{\aact(t)},
+\end{aligned}
+\label{eq:tau}
+\end{equation}
+with $\tau(0)=0$, $\sigma_0=\SI{1.5e5}{Pa}$, $\gamma=\SI{0.005}{s}$,
+$\alpha_{\min}=-30$, $\alpha_{\max}=5$, $t_{\mathrm{sys}}=\SI{0.16}{s}$,
+$t_{\mathrm{dias}}=\SI{0.484}{s}$. AR25 tabulate $\alpha_{\min},\alpha_{\max}$
+without units; dimensionally they are rates, and the benchmark takes them in
+\si{s^{-1}} with $t$ in seconds.
+
+\paragraph{Passive pressure waveform} (AR25 eqs.~7--8, their Table~4;
+monoventricular values, not the biventricular Table~9):
+\begin{equation}
+\begin{aligned}
+f_{\mathrm{pre}}(t) &= \Splus(t-t_{\mathrm{sys\text{-}pre}})\,\Sminus(t-t_{\mathrm{dias\text{-}pre}}),\qquad
+g_{\mathrm{pre}}(t) = \Sminus(t-t_{\mathrm{dias\text{-}pre}}),\\
+b_{\mathrm{act}}(t) &= \alpha_{\max} f_{\mathrm{pre}} + \alpha_{\min}[1-f_{\mathrm{pre}}]
+ + \alpha_{\mathrm{pre}}\,g_{\mathrm{pre}} + \alpha_{\mathrm{mid}},\\
+\dot p &= -|b_{\mathrm{act}}(t)|\,p + \sigma_{\mathrm{mid}}\pos{b_{\mathrm{act}}(t)}
+ + \sigma_{\mathrm{pre}}\pos{g_{\mathrm{pre}}(t)},
+\end{aligned}
+\label{eq:p}
+\end{equation}
+with $p(0)=0$, $\alpha_{\mathrm{pre}}=5$, $\alpha_{\mathrm{mid}}=1$ (\si{s^{-1}}),
+$\sigma_{\mathrm{pre}}=\SI{7000}{Pa}$, $\sigma_{\mathrm{mid}}=\SI{16000}{Pa}$,
+$t_{\mathrm{sys\text{-}pre}}=\SI{0.17}{s}$, $t_{\mathrm{dias\text{-}pre}}=\SI{0.484}{s}$.
+
+\paragraph{Tabulated forcing} Both ODEs are integrated once by the
+\texttt{makeArosticaTimeSeries} utility of PR~\#571 (exponential update with
+coefficients frozen at the sub-step midpoint, internal step \SI{1e-5}{s},
+output every \SI{1e-4}{s}, linear interpolation between sub-steps) and the
+tables are released with the case. The utility gives peaks
+$\tau_{\max}=\SI{118106}{Pa}$ and $p_{\max}=\SI{16074}{Pa}$, against
+\SI{118817}{Pa} and \SI{16118}{Pa} quoted in AR25's figure captions.
+\CODECHECK{Reproduce both peaks with an independent tight-tolerance ODE
+solver before attributing the difference to AR25's integration; state the
+interpolation used by the consuming boundary condition and material law at
+solver times.}
+
+\paragraph{Parameters} \Cref{app:parameters}.
 
 % ===========================================================================
 \subsection{Fluid model}\label{sec:fluid}
@@ -99,116 +205,191 @@ $\Of$ with mesh velocity $\ww$:
  + \bigl((\vv-\ww)\cdot\nabla\bigr)\vv\Bigr)
  - \dive\sig_{\mathrm{f}} &= \vect 0, &
 \dive\vv &= 0 \quad\text{in } \Of,\\
-\sig_{\mathrm{f}} &= -p\,\II + \mu_{\mathrm{f}}\bigl(\nabla\vv + \nabla\vv^{\mathsf T}\bigr),
+\sig_{\mathrm{f}} &= -p\,\II + 2\mu_{\mathrm{f}}\tens D,\qquad
+\tens D = \operatorname{sym}(\nabla\vv),
 \end{align}
 with $\rho_{\mathrm f}=\SI{1050}{kg/m^3}$ and
 $\mu_{\mathrm f}=\SI{3.5e-3}{Pa.s}$ ($\nu_{\mathrm f} = \SI{3.33e-6}{m^2/s}$).
-Gravity is neglected and the flow is assumed laminar.
-\TODO{Report peak Reynolds and Womersley numbers based on port diameters;
-justify the laminar assumption.}
+Gravity is neglected. No turbulence model is used; the Reynolds number
+$Re=\rho_{\mathrm f}U D/\mu_{\mathrm f}$, with $U$ the peak port mean velocity
+and $D$ the port diameter, is reported as a characterisation of each
+problem, not as proof of laminar flow (the tests are not periodic, so no
+Womersley number is defined).
 
 % ===========================================================================
 \subsection{Interface and boundary conditions}\label{sec:bcs}
 
-\paragraph{Fluid--solid interface $\Gfsi=\Gendo$} Kinematic and dynamic
-continuity,
+\paragraph{Fluid--solid interface $\Gfsi=\Gendo$} Let $\nn_{\mathrm f}$ and
+$\nn_{\mathrm s}$ be the outward unit normals of the fluid and solid domains
+on the current interface, $\nn_{\mathrm s}=-\nn_{\mathrm f}$, and $\NN_{\mathrm s}$
+the outward solid normal in the reference configuration, related by Nanson's
+formula $\nn_{\mathrm s}\,\mathrm da = J\FF^{-\mathsf T}\NN_{\mathrm s}\,\mathrm dA$.
+Kinematic and dynamic continuity read
 \begin{equation}
 \vv = \dot{\uu},\qquad
-\sig_{\mathrm f}\,\nn\,\mathrm da = \PP\NN\,\mathrm dA
-\quad\text{on }\Gfsi,
+\sig_{\mathrm f}\nn_{\mathrm f} + \sig_{\mathrm s}\nn_{\mathrm s} = \vect 0
+\quad\text{on }\Gfsi,\qquad \sig_{\mathrm s} = J^{-1}\PP\FF^{\mathsf T},
+\label{eq:interface}
 \end{equation}
-which replace the prescribed endocardial pressure of AR25.
+i.e.\ the solid receives the traction $\sig_{\mathrm f}\nn_{\mathrm f}$ per
+unit current area, and a positive fluid pressure $p$ compresses the wall.
+This replaces the prescribed endocardial pressure of AR25.
 
 \paragraph{Solid} On $\Gepi$ and $\Gbase$ the Robin (spring--dashpot)
-conditions of AR25 (normal-only on $\Gepi$ with
-$\alpha_{\mathrm{epi}}=\SI{1e8}{Pa/m}$, $\beta_{\mathrm{epi}}=\SI{5e3}{Pa.s/m}$;
-all directions on $\Gbase$ with $\alpha_{\mathrm{top}}=\SI{1e5}{Pa/m}$,
-$\beta_{\mathrm{top}}=\SI{5e3}{Pa.s/m}$).
+conditions of AR25 eq.~(1): on $\Gepi$ the normal component only, with
+$\alpha_{\mathrm{epi}}=\SI{1e8}{Pa/m}$, $\beta_{\mathrm{epi}}=\SI{5e3}{Pa.s/m}$,
+and on $\Gbase$ all components with $\alpha_{\mathrm{top}}=\SI{1e5}{Pa/m}$,
+$\beta_{\mathrm{top}}=\SI{5e3}{Pa.s/m}$.
 
-\paragraph{Fluid} No slip on the cap wall. The port conditions depend on the
-problem (\cref{sec:steps}). A closed port is a no-slip wall; an open port
+\paragraph{Fluid} On the cap wall, $\vv=\ww$ (no slip relative to the moving
+wall; $\ww=\vect0$ where the cap is fixed). The port conditions depend on
+the problem (\cref{sec:steps}). A closed port is a wall. An open port
 carries either a prescribed normal traction
-$\sig_{\mathrm f}\nn = -p_{\mathrm{port}}(t)\,\nn$ (pressure-driven variant) or a
-prescribed volumetric flow rate $Q(t)$ with a plug \TODO{or parabolic}
-profile (flow-driven variant).
+$\sig_{\mathrm f}\nn_{\mathrm f} = -p_{\mathrm{port}}(t)\,\nn_{\mathrm f}$
+with zero tangential velocity gradient (pressure-driven), or a prescribed
+volumetric flow rate $Q(t)$, defined positive \emph{into} the cavity, with a
+plug profile (flow-driven). An open pressure port is bidirectional: nothing
+prevents inflow through the nominal outlet or outflow through the nominal
+inlet, in particular during relaxation after contraction or while the
+prescribed pressure falls. The benchmark permits this and reports both net
+and gross port volumes (\cref{sec:qoi}).
+\AUTHOR{Treatment of reverse flow at open pressure boundaries (none, or an
+inflow stabilisation term) is part of the problem definition and must be
+fixed and stated.}
+
+\paragraph{Initial conditions} $\uu=\dot\uu=\vect0$, $\vv=\vect0$, $p=0$,
+$\tau(0)=p_{\mathrm{port}}(0)=0$, mesh in the reference configuration. Since
+all forcing starts from zero, the initial state is an equilibrium and no
+ramp or pre-stress is applied. The time origin is that of AR25.
 
 % ===========================================================================
 \subsection{Benchmark problems}\label{sec:steps}
-The cardiac cycle is \emph{not} simulated. Instead, filling and contraction are
-posed as two separate problems, each starting from the unloaded reference
-configuration at rest, $t\in[0,1]$\,s, and each the FSI counterpart of an AR25
-Step~0 case (\cref{tab:problems}). Valves are not needed: in each problem only
-one port is open.
+The cardiac cycle is not simulated. Filling and contraction are posed as
+two separate problems on $t\in[0,1]$\,s, each starting from the reference
+configuration at rest, and each the counterpart of an AR25 Step~0 case
+(\cref{tab:problems}). Only one port is open in each problem, so no valve
+model is needed.
 
 \begin{description}
-\item[{Problem S --- solid only (verification of the solid solver).}]
-  AR25 Benchmark~1, Steps~0A, 0B and~1, solved with the same solid solver,
-  meshes and settings used in Problems F and C. Results are compared with
-  the nine AR25 reference codes.
-\item[{Problem F --- passive filling.}] $\tau\equiv0$. $\Gin$ open, $\Gout$
-  closed. Pressure-driven variant F-p: $p_{\mathrm{in}}(t)=p(t)$ of AR25
-  eq.~(7), Table~4. This is the FSI counterpart of AR25 Step~0B (passive,
-  endocardial pressure $p(t)$). Flow-driven variant F-Q: $Q_{\mathrm{in}}(t)$
-  prescribed \TODO{analytical waveform, e.g.\
-  $Q_{\mathrm E}\sin^2(\pi t/t_{\mathrm f})$}, which imposes the cavity
-  volume kinematically.
-\item[{Problem C --- active contraction.}] $\tau(t)$ of AR25 Table~3.
-  $\Gin$ closed, $\Gout$ open. Pressure-driven variant C-p: traction-free
-  outlet, $p_{\mathrm{out}}=0$. This is the FSI counterpart of AR25 Step~0A
-  (active, $p=0$). \TODO{Optional variant C-R: resistive or three-element
-  Windkessel outlet to provide a physiological afterload.}
+\item[{Problem S --- solid only.}]
+  AR25 Benchmark~1, Steps~0A, 0B and~1, with the prescribed endocardial
+  pressure of AR25 and no fluid, solved with the solid solver, meshes and
+  settings used in Problems F and C. Compared with the nine AR25 numerical
+  solutions (\cref{sec:ver:solid}).
+\item[{Problem F --- pressure-driven passive deformation.}] $\tau\equiv0$.
+  $\Gin$ open, $\Gout$ a wall. Core variant F-p: $p_{\mathrm{port}}(t)=p(t)$ of
+  \cref{eq:p}, the same waveform AR25 Step~0B prescribes over the whole
+  endocardium. Extension F-Q: $Q_{\mathrm{in}}(t)$ prescribed, which imposes
+  the cavity volume kinematically. \AUTHOR{F-Q waveform: profile, amplitude,
+  duration, sign and compatibility with the initial rest state must be
+  frozen and released; e.g.\ $Q_{\mathrm E}\sin^2(\pi t/t_{\mathrm f})$ on
+  $[0,t_{\mathrm f}]$ and zero after.}
+\item[{Problem C --- activation-driven contraction.}] $\tau(t)$ of
+  \cref{eq:tau}. $\Gin$ a wall, $\Gout$ open. Core variant C-p:
+  $p_{\mathrm{port}}=0$ (traction-free outlet), the counterpart of AR25
+  Step~0A (active, $p=0$ on the endocardium). \AUTHOR{Optional C-R: resistive
+  or three-element Windkessel outlet. Keep as supplementary/future work
+  unless its equations, parameters and initialisation are fully specified
+  and run.}
 \end{description}
 
 \begin{table}[t]
 \centering
-\caption{Benchmark problems and their solid-only counterparts in AR25.}
+\caption{Benchmark problems and their solid-only counterparts in AR25.
+$p(t)$ is the waveform of \cref{eq:p} (AR25 Table~4); $\tau(t)$ that of
+\cref{eq:tau} (AR25 Table~3).}
 \label{tab:problems}
 \small
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{lllll}
+\begin{tabular}{llllll}
 \toprule
-Problem & Activation & $\Gin$ & $\Gout$ & AR25 counterpart \\
+Problem & Status & Activation & $\Gin$ & $\Gout$ & AR25 counterpart \\
 \midrule
-S & as AR25 & -- & -- & Steps 0A, 0B, 1 (identical) \\
-F-p & $\tau=0$ & $p_{\mathrm{in}}=p(t)$ (Table~4) & wall & Step 0B \\
-F-Q & $\tau=0$ & $Q_{\mathrm{in}}(t)$ & wall & -- \\
-C-p & $\tau(t)$ (Table~3) & wall & $p_{\mathrm{out}}=0$ & Step 0A \\
-C-R & $\tau(t)$ (Table~3) & wall & Windkessel \TODO{optional} & -- \\
+S   & core      & as AR25 & -- & -- & Steps 0A, 0B, 1 (same problem) \\
+F-p & core      & $\tau=0$ & $p_{\mathrm{port}}=p(t)$ & wall & Step 0B (loading differs, see text) \\
+F-Q & extension & $\tau=0$ & $Q_{\mathrm{in}}(t)$ & wall & -- \\
+C-p & core      & $\tau(t)$ & wall & $p_{\mathrm{port}}=0$ & Step 0A (loading differs, see text) \\
+C-R & optional  & $\tau(t)$ & wall & Windkessel & -- \\
 \bottomrule
 \end{tabular}}
 \end{table}
 
-\paragraph{Why pressure-driven variants} In F-p and C-p the cavity volume is an
-output, so partitioned schemes do not face the incompressibility dilemma
-\citep{Kuttler2006}, and each solution can be compared directly with the AR25
-solid-only solution. The difference between the FSI and solid-only
-displacements isolates the effect of fluid inertia and viscosity, i.e.\ of the
-coupling itself. The flow-driven variant F-Q is the harder test for
-partitioned coupling, because the enclosed fluid volume is prescribed and the
-cavity pressure acts as a Lagrange multiplier. \TODO{Note: the AR25
-pressure $p(t)$ peaks at \SI{16.1}{kPa}, a systolic rather than diastolic
-level; keep it for comparability with AR25 and say so, or scale it to a
-diastolic level (e.g.\ \SI{1.33}{kPa}) and lose the direct comparison.}
+\paragraph{Meaning of the solid-only comparison}
+In Problem~S the pressure acts uniformly over the whole endocardium. In the
+coupled problems the pressure (or zero traction) is imposed at a port, and
+the endocardial traction --- a spatially varying pressure plus viscous shear
+--- follows from the fluid solution; the cap and port geometry also enter.
+The difference between the coupled and the solid-only displacement is
+therefore a comparison of two loading models under the chosen boundary
+configuration. It is not an FSI verification error, and it does not by
+itself separate the contributions of fluid inertia, viscosity or coupling
+error. Three distinct activities are kept apart throughout:
+(i)~solid cross-code comparison (Problem~S against the AR25 solutions);
+(ii)~FSI solution verification (spatial, temporal and iterative convergence
+and conservation of the coupled problems, \cref{sec:verification}); and
+(iii)~physical-model comparison (coupled vs.\ solid-only response).
+In F-p and C-p the cavity volume is an output, so partitioned coupling does
+not face a pure-kinematic fluid boundary; F-Q, in which the enclosed volume is
+prescribed and the cavity pressure is determined only by the solid, is the
+harder test for partitioned iterations \citep{Kuttler2006}.
+The passive pressure of \cref{eq:p} reaches \SI{16}{kPa}, a systolic rather
+than a diastolic level; F-p is therefore a numerical stress test with the
+AR25 waveform, not a physiological filling phase.
 
 % ===========================================================================
 \subsection{Quantities of interest}\label{sec:qoi}
-For each problem:
+For each problem, with sampling every \SI{1}{ms} for all time series (the
+\SI{10}{ms} AR25 sampling is used only for $\RED$):
 \begin{enumerate}
-\item displacements $\uu(\vect p_0,t)$, $\uu(\vect p_1,t)$ at the AR25 points
-  $\vect p_0=(0.025,0.03,0)$\,m and $\vect p_1=(0,0.03,0)$\,m, and of the
-  epicardial apex;
-\item cavity volume $V(t)$, from the fluid mesh and independently from
-  $\Gendo$ (consistency check), and the port flow rate;
-\item mean cavity pressure $\bar p(t)$, apex pressure $p_{\mathrm{apex}}(t)$,
-  and the intraventricular pressure difference
-  $\Delta p_{\mathrm{IVPD}}(t) = p_{\mathrm{base}}-p_{\mathrm{apex}}$;
-\item fluid kinetic energy $E_k(t) = \tfrac12\rho_{\mathrm f}\int_{\Of}|\vv|^2$
-  and viscous dissipation $\Phi(t)$;
-\item vortex metrics in the mid-plane $z=0$ (Problem F): circulation and
-  vortex-core position \TODO{criterion: $\lambda_2$ or $Q$, threshold};
-\item velocity profiles along prescribed lines at given times \TODO{define lines};
+\item displacements $\uu(\vect p_0,t)$, $\uu(\vect p_1,t)$ at the AR25
+  material points $\vect p_0=(0.025,0.03,0)$\,m and $\vect p_1=(0,0.03,0)$\,m
+  (interpolated from the cell-centred field with \TODO{interpolation}), and
+  at the epicardial apex $\vect p_{\mathrm{apex}}=(-0.097,0,0)$\,m;
+\item cavity volume $V(t)$ from the closed oriented surface
+  $\Gendo\cup\Gcap$, $V=\tfrac13\oint\vect x\cdot\nn\,\mathrm da$ (if tubes
+  are present, the tube volume is reported separately), and the port flow
+  rate $Q(t)=-\int_{\mathrm{port}}(\vv-\ww)\cdot\nn_{\mathrm f}\,\mathrm da$,
+  positive into the cavity;
+\item net port volume $\int_0^t Q\,\mathrm ds$ and gross outward volume
+  $\int_0^t\pos{-Q}\,\mathrm ds$ (these differ when flow reverses); the
+  ALE mass residual
+  $R_V(t) = V(t)-V(0)-\int_0^t Q\,\mathrm ds$, absolute and relative to $V_0$;
+\item cavity-averaged pressure $\bar p(t)=|\Of|^{-1}\int_{\Of}p$, and the
+  intraventricular pressure difference
+  $\Delta p_{\mathrm{IVPD}}(t)=\bar p_{\mathrm{base}}-\bar p_{\mathrm{apex}}$
+  between two spherical sampling regions of radius \SI{3}{mm} centred at
+  \TODO{base point} and \SI{5}{mm} above the endocardial apex (region
+  averages, not vertex values, so that the quantity is not method-sensitive);
+  the pressure reference is $p_{\mathrm{port}}$ on the open port;
+\item fluid kinetic energy $E_k(t)=\tfrac12\rho_{\mathrm f}\int_{\Of}|\vv|^2$
+  and viscous dissipation $\Phi_{\mathrm f}(t)=\int_{\Of}2\mu_{\mathrm f}\tens D:\tens D$;
+\item $\max_{\Os}|J-1|$ over time;
+\item for Problem F, in the plane $z=0$: the circulation of the filling
+  vortex, $\Gamma=\int_{A}\omega_z\,\mathrm dA$ over the region $A$ where
+  $\lambda_2<\lambda_{2,\mathrm{thr}}$ \TODO{threshold in \si{s^{-2}}}, and the
+  position of its core (minimum of $\lambda_2$); the 2-D circulation and the
+  3-D $\lambda_2$ criterion are reported as distinct diagnostics;
+\item velocity profiles along the long axis and along the line
+  $x=0$, $z=0$ at $t\in\{0.2,0.3,0.4,0.5\}$\,s;
+\item peaks of each time series together with the time at which they occur,
+  and values at fixed times, reported separately;
 \item coupling and cost statistics: FSI iterations per time step, solid
-  non-linear iterations, wall-clock time and cores.
+  Newton iterations per FSI iteration, and wall-clock time with hardware
+  and core count.
 \end{enumerate}
-Discrepancy between solutions is measured with the relative discrepancy
-$\RED$ of AR25 (their eq.~21), sampled every \SI{10}{ms}.
+
+\paragraph{Discrepancy measure} For comparison with AR25 the relative
+discrepancy of their eq.~(21) is used unchanged: with $N$ participant
+solutions $\uu^i$ and their mean $\bar\uu$,
+\begin{equation}
+\RED^i(\vect p) = \frac{1}{T}\sum_{n=0}^{T-1}
+\frac{\|\uu^i(t_n,\vect p)-\bar\uu(t_n,\vect p)\|_2}{\|\bar\uu(t_n,\vect p)\|_2},
+\qquad t_n = n\cdot\SI{10}{ms},\quad T=101,
+\end{equation}
+with linear interpolation of histories to $t_n$.
+\CODECHECK{The denominator vanishes at $t_0=0$; adopt the convention of the
+cardiac-benchmark-toolkit for zero/near-zero denominators and state how
+multiple submissions from one group are weighted in $\bar\uu$.}
+For convergence studies a separately named relative error against the
+finest solution is used instead (\cref{sec:ver:error}); $\RED$ is never
+redefined.

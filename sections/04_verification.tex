@@ -1,77 +1,174 @@
-\section{Verification and robustness methodology}\label{sec:verification}
+\section{Verification methodology}\label{sec:verification}
 
-\subsection{Error estimation}
-For a scalar quantity $\phi$ computed on three systematically refined meshes
-(or time steps) with ratio $r$, the observed order, extrapolated value and
-fine-grid convergence index are \citep{Roache1998,Celik2008}
-\begin{equation}
-p_{\mathrm{obs}} = \frac{\ln\bigl|(\phi_3-\phi_2)/(\phi_2-\phi_1)\bigr|}{\ln r},\qquad
-\phi_{\mathrm{ext}} = \phi_1 + \frac{\phi_1-\phi_2}{r^{p_{\mathrm{obs}}}-1},\qquad
-\mathrm{GCI}_{21} = \frac{1.25\,|(\phi_1-\phi_2)/\phi_1|}{r^{p_{\mathrm{obs}}}-1}.
-\end{equation}
-For time series we use the $\RED$ of AR25 against the finest solution and the
-relative $L^2$-in-time norm
-$e_{L^2} = \|\phi_h-\phi_{\mathrm{ref}}\|_{L^2(0,T)}/\|\phi_{\mathrm{ref}}\|_{L^2(0,T)}$.
-Scalar QoIs for the GCI:
+Three activities are kept apart (\cref{sec:steps}): solid cross-code
+comparison (\cref{sec:ver:solid}), implementation checks
+(\cref{sec:ver:impl}), and FSI solution verification
+(\cref{sec:ver:error,sec:ver:mesh,sec:ver:time,sec:ver:robust,sec:ver:cons}).
+
+\subsection{Solid cross-code comparison}\label{sec:ver:solid}
+Problem~S (AR25 Steps~0A, 0B, 1) with the original AR25 boundary conditions,
+on M1--M4, compared component-wise with the nine AR25 solutions at
+$\vect p_0$, $\vect p_1$, and with $\RED$ against the AR25 ensemble mean. The
+AR25 solutions agree to within about \SI{0.5}{mm}, a fraction of their
+element size (3--\SI{5}{mm}); this spread, and the resolution of each
+participant, bound what agreement can mean. The existing regression test of
+PR~\#571 (Step~1, M1, to \SI{0.05}{s}, checking $p_{0,x}\in[0.3,0.6]$\,mm)
+is retained and extended to peak contraction and relaxation. If the cap
+decision of \cref{sec:geometry} constrains the solid base, a solid-only
+control with the same constraint is added and reported separately; the
+modified problem is not called AR25's.
+
+\subsection{Implementation checks}\label{sec:ver:impl}
 \begin{itemize}
-\item Problem F: peak and final cavity volume, peak $\bar p$ (F-Q),
-  peak $\Delta p_{\mathrm{IVPD}}$, peak $E_k$, $\uu(\vect p_0)$ and
-  $\uu(\vect p_1)$ at the time of peak loading;
-\item Problem C: ejected volume, peak outflow rate, peak $\Delta p_{\mathrm{IVPD}}$,
-  peak $E_k$, $\uu(\vect p_0)$ and $\uu(\vect p_1)$ at peak contraction.
+\item constitutive response on prescribed homogeneous deformation states
+  (uniaxial along $\f$, $\s$, $\vect n_0$; simple shear in the $fs$ plane;
+  pure dilatation), with and without $\tau$ and $\dot\EE$, against an
+  independent evaluation of \cref{eq:S,eq:Psi};
+\item orthonormality of $(\f,\s,\vect n_0)$ and its behaviour at the apex;
+\item independent integration of \cref{eq:tau,eq:p} and comparison with the
+  released tables;
+\item ALE geometric conservation on a compatible moving-mesh test (a
+  uniform flow on a domain with a prescribed, divergence-compatible
+  boundary motion; a uniform flow is not compatible with the deforming
+  no-slip LV walls, so this is a separate test, not a property of the
+  production case);
+\item conservation of force and work across the interface mapping;
+\item a simpler established coupled problem (e.g.\ the pressure-driven
+  elastic tube) with the same coupling settings \TODO{choose}.
+\end{itemize}
+
+\subsection{Error estimation}\label{sec:ver:error}
+Meshes are indexed from fine to coarse, $h_1<h_2<h_3$, so that M4, M3, M2
+are levels 1, 2, 3 of a triplet. For a scalar quantity $\phi$ on three
+levels with refinement ratios $r_{21}=h_2/h_1$, $r_{32}=h_3/h_2$, the
+procedure of \citet{Celik2008} gives the observed order $p_{\mathrm{obs}}$
+(solved iteratively when $r_{21}\ne r_{32}$), the extrapolated value
+$\phi_{\mathrm{ext}}$ and the fine-grid convergence index
+\begin{equation}
+\mathrm{GCI}_{21} = \frac{1.25\,|\phi_1-\phi_2|/|\phi_1|}{r_{21}^{\,p_{\mathrm{obs}}}-1}.
+\end{equation}
+Each triplet is first classified as monotonically convergent, oscillatory or
+divergent from the sign of $(\phi_3-\phi_2)/(\phi_2-\phi_1)$; the GCI is
+reported only for monotonic convergence, and $p_{\mathrm{obs}}$, the ratios
+and the classification are reported in every case. Near-zero quantities
+use an absolute error with a fixed scale. For time series the relative
+error against the finest solution,
+$e_{L^2} = \|\phi_h-\phi_{h_1}\|_{L^2(0,T)}/\|\phi_{h_1}\|_{L^2(0,T)}$, is used;
+it is distinct from $\RED$. GCI is an estimated discretisation uncertainty
+under the asymptotic-range assumption, not a bound on the error.
+
+\paragraph{Scalar QoIs}
+\begin{itemize}
+\item Problem F: $V$ at the time of peak pressure and at $t=1$\,s; peak
+  $\Delta p_{\mathrm{IVPD}}$ and its time; peak $E_k$ and its time;
+  $u_x(\vect p_0)$ and $u_x(\vect p_1)$ at $t=0.45$\,s; peak $\Gamma$;
+\item Problem C: net ejected volume at $t=1$\,s and gross outward volume;
+  peak outflow rate and its time; peak $\Delta p_{\mathrm{IVPD}}$; peak
+  $E_k$; $u_x(\vect p_0)$ and $u_x(\vect p_1)$ at $t=0.45$\,s;
+\item both: $\max|J-1|$, $\max|R_V|/V_0$.
 \end{itemize}
 
 \subsection{Spatial convergence}\label{sec:ver:mesh}
-Problems S, F and C on M1--M4 at a fixed small $\dt$. Solid and fluid are
-refined together, and then separately (fine solid with coarse fluid and vice
-versa), to attribute the discretisation error to each sub-problem.
+At a fixed small $\dt$ and tight iterative tolerances (so that temporal and
+iterative errors are shown to be smaller than the differences measured):
+(i) paired refinement of solid and fluid, M1--M4; (ii) solid refined with
+the fluid held at its finest affordable level, and (iii) the converse, to
+attribute the error to each domain. Solid and fluid $h$ are reported
+separately and never collapsed into one. The interface mapping, the
+curvature representation and the fibre field change with refinement; their
+effect is noted.
 
 \subsection{Temporal convergence}\label{sec:ver:time}
 On the finest affordable mesh,
-$\dt \in \{\num{4e-4},\num{2e-4},\num{1e-4},\num{5e-5},\num{2.5e-5}\}$\,s
-\TODO{adjust}, with the coupling tolerance tightened so that it does not
-contaminate the temporal error. Report the maximum Courant number and the
-observed temporal order (expected 2 for BDF2, 1 for implicit Euler).
+$\dt \in \{\num{1e-3},\num{5e-4},\num{2.5e-4},\num{1.25e-4},\num{6.25e-5}\}$\,s
+\TODO{adjust from pilot cost}, with $\epsilon_{\mathrm{FSI}}$ and the inner
+tolerances tightened so that they do not contaminate the temporal error;
+maximum Courant number reported. The observed temporal order is measured
+and compared with the formal orders of the components (BDF2 for the solid
+inertia, first order for the viscous term, Euler or BDF2 for the fluid);
+a second-order component scheme does not imply second-order coupled
+results when start-up, mesh fluxes, coupling lag, interpolation or loose
+tolerances dominate. This study measures the temporal convergence of one
+spatially discrete problem; it does not establish resolution independence.
 
 \subsection{Sensitivity to numerical settings and robustness}\label{sec:ver:robust}
-Starting from the baseline (\cref{tab:settings}), one setting is varied at a
-time on mesh M2 (and M3 for the most influential). For each run we record
-(i) whether it completes, (ii) the deviation of the QoIs from the baseline
-($\RED$), and (iii) the cost: FSI iterations per step and wall-clock time.
+Starting from the baseline (\cref{tab:settings}) and a tightly converged
+reference (finest mesh and $\dt$, tightest tolerances), one setting is
+varied at a time on M2, and the most influential on M3. A run is a success
+only if it completes, every time step meets the coupling criterion, every
+inner solve converges, $|R_V|/V_0$ and the mesh-quality limits are
+satisfied. For each run: success, deviation of the QoIs from the converged
+reference (not from the baseline), FSI iterations per step and wall-clock
+time.
 \begin{enumerate}
 \item \textbf{Solid incompressibility}: mixed $\uu$--$p$ vs.\ pure
-  displacement with penalty $\kappa$.
-\item \textbf{Solid momentum stabilisation}: type (\texttt{RhieChow},
-  \texttt{diffStencilLaplacian}) and factor
-  $c_{\uu}\in\{0.1, 1, 10, 100\}$ \TODO{range}; show the trade-off between
-  checkerboard suppression and artificial stiffening, and its dependence on
-  mesh size (the stabilisation should vanish with $h\to0$).
-\item \textbf{Solid pressure stabilisation}: $c_p \in \{0.1, 1, 10\}$.
+  displacement with penalty $\kappa$; $\max|J-1|$.
+\item \textbf{Solid momentum stabilisation}: $c_{\uu}\in\{1,10,100,1000\}$
+  \TODO{range}; the trade-off between checkerboarding and artificial
+  stiffening, and its dependence on $h$ (the term should vanish as
+  $h\to0$).
+\item \textbf{Solid pressure stabilisation}: $c_p\in\{0.1,1,10\}$, with
+  $c_p^{\mathrm J}$ reported separately if it affects convergence only.
 \item \textbf{Fluid time scheme}: Euler vs.\ backward.
-\item \textbf{Fluid convection scheme}: upwind, linearUpwind, linear.
-\item \textbf{Mesh motion}: diffusivity choice; minimum cell quality reached
-  at peak deformation.
-\item \textbf{Interface condition}: Dirichlet--Neumann vs.\ Robin;
-  Robin parameters $p_{\mathrm{ref}}$, $U_{\mathrm{ref}}$ over two orders of
-  magnitude.
-\item \textbf{Acceleration}: fixed relaxation ($\omega\in\{0.1,0.5,1\}$),
-  Aitken, IQN-ILS (with reuse of past time steps).
-\item \textbf{Coupling tolerance}:
-  $\epsilon_{\mathrm{FSI}}\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$; the
-  loosest tolerance whose QoIs agree with the tightest within the
-  discretisation error is the recommended value.
+\item \textbf{Fluid convection}: upwind, linearUpwind, linear.
+\item \textbf{Mesh motion}: diffusivity; minimum cell quality at peak
+  deformation.
+\item \textbf{Interface condition}: Dirichlet--Neumann with and without
+  the Robin-type pressure condition; residual normalisation floors over two
+  orders of magnitude (expected to change the admissible residual, not the
+  converged solution).
+\item \textbf{Acceleration}: fixed $\omega\in\{0.3,0.5,1\}$, Aitken, IQN-ILS
+  (with and without reuse of past time steps).
+\item \textbf{Coupling tolerance}: $\epsilon_{\mathrm{FSI}}\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$;
+  the loosest value whose QoIs agree with the tightest within the
+  discretisation uncertainty is recommended.
 \end{enumerate}
-The outcome is a robustness map (\cref{tab:robust}) and a recommended
-``benchmark-grade'' configuration.
+One-factor-at-a-time screening does not reveal interactions; a small
+targeted interaction study is added for stabilisation~$\times$~mesh,
+acceleration~$\times$~$\dt$, and normalisation floor~$\times$~tolerance. The
+outcome is a robustness map (\cref{tab:robust}) and a recommended
+configuration.
 
-\subsection{Conservation and consistency checks}
+\subsection{Conservation and consistency checks}\label{sec:ver:cons}
 \begin{itemize}
-\item cavity volume from the fluid mesh vs.\ from $\Gendo$, and (F-Q)
-  vs.\ $V_0+\int_0^t Q_{\mathrm{in}}\,\mathrm ds$;
-\item discrete geometric conservation law of the ALE scheme (a uniform
-  flow is preserved on the moving mesh);
-\item energy budget: power of the interface tractions vs.\
-  $\dot E_k + \Phi$ plus port fluxes;
+\item mass: $R_V(t)$ of \cref{sec:qoi} for F-p, C-p and F-Q (impermeable
+  moving walls assumed; any interface leakage
+  $\int_{\Gfsi}(\vv-\ww)\cdot\nn\,\mathrm da$ reported);
+\item fluid energy, with every boundary $\partial\Of$ included:
+  \begin{equation}
+  \frac{\mathrm dE_k}{\mathrm dt} + \Phi_{\mathrm f} =
+  \int_{\partial\Of}\vv\cdot(\sig_{\mathrm f}\nn)\,\mathrm da
+  - \int_{\partial\Of}\tfrac12\rho_{\mathrm f}|\vv|^2(\vv-\ww)\cdot\nn\,\mathrm da,
+  \end{equation}
+  whose discrete residual is reported as a numerical budget error; the
+  coupled budget adds solid kinetic and strain energy, viscous and dashpot
+  dissipation, spring energy and active-stress power with the implemented
+  sign convention;
 \item interface consistency: velocity and traction jumps across $\Gfsi$ at
-  convergence.
+  convergence;
+\item volume consistency: $V$ from the fluid mesh vs.\ from the closed
+  solid-side surface.
 \end{itemize}
+
+\subsection{Staged run plan}\label{sec:ver:plan}
+\begin{enumerate}
+\item Specification gate: geometry, cap, ports, loads, pressure units,
+  software provenance; machine-readable parameter file released.
+\item Problem~S on M1--M4 with the original AR25 conditions; modified-base
+  control if needed.
+\item Implementation checks of \cref{sec:ver:impl}.
+\item Pilot F-p and C-p on M2: reversals, $R_V$, mesh validity, pressure
+  scales, solver convergence, cost per step.
+\item Iterative convergence: tighten fluid, solid and interface criteria
+  until the QoIs stop changing relative to the targeted discretisation
+  differences.
+\item Resolution studies (\cref{sec:ver:mesh,sec:ver:time}).
+\item Targeted sensitivity (\cref{sec:ver:robust}).
+\item Extensions: F-Q once its volume compatibility and convergence are
+  shown; C-R only if fully specified.
+\end{enumerate}
+At $\dt=\SI{5e-5}{s}$ a one-second run is \num{20000} steps; with 30
+coupling iterations per step this is $6\times10^{5}$ coupled iterations
+before inner solves, so the campaign is sized from the pilot cost
+measurements, with hardware, MPI ranks, memory, output overhead and timing
+variability reported.

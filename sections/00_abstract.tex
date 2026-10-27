@@ -1,35 +1,40 @@
 \begin{abstract}
 Fluid--structure interaction (FSI) models of the left ventricle (LV) are
-increasingly used to study intraventricular haemodynamics, yet published
-studies rarely report the information needed to reproduce them: ventricular
-dimensions, constitutive parameters, spatial and temporal schemes,
-stabilisation, the coupling algorithm and its tolerances, and evidence of mesh
-and time-step convergence. Community benchmarks now exist for cardiac solid
-mechanics \citep{Land2015,Arostica2025} but not for ventricular FSI.
-We propose one that adds blood flow to the monoventricular elastodynamics
-benchmark of \citet{Arostica2025}: an idealised truncated-ellipsoid LV with an
-analytical fibre field, a visco-active Holzapfel--Ogden myocardium and
-pericardial Robin boundary conditions, whose cavity is filled with an
-incompressible Newtonian fluid. Rather than a full cardiac cycle, two separate
-problems are posed, without valves: passive filling through an inflow port,
-and active contraction that ejects through an outflow port. Each is the FSI
-counterpart of a solid-only case of \citet{Arostica2025}, for which nine
-reference solutions exist, so the effect of the fluid can be isolated and
-verified. Reference solutions are computed with the finite-volume toolbox
-solids4foam. Every numerical setting is reported, and systematic studies of
-mesh, time step, solid stabilisation, fluid schemes, interface conditions,
-coupling acceleration and coupling tolerance establish both convergence (with
-grid-convergence indices) and robustness.
-\RES{key numbers: effect of the fluid on the AR25 displacements, converged
-volumes, GCI, recommended settings.}
-Geometry, meshes, case files and reference data are released openly, and a
-minimum reporting checklist for ventricular FSI is proposed.
+used to study intraventricular haemodynamics, yet the information needed to
+reproduce them --- ventricular dimensions, constitutive parameters, spatial
+and temporal schemes, stabilisation, the coupling algorithm, its residual
+definitions and tolerances, and evidence of mesh and time-step convergence
+--- is often incomplete in published studies. Community benchmarks exist for
+cardiac solid mechanics \citep{Land2015,Arostica2025}; we are not aware of a
+fully specified, openly released benchmark for two-way myocardial FSI.
+Building on our solids4foam implementation of the \citet{Arostica2025}
+cardiac elastodynamics benchmark, we define a reproducible extension to FSI
+in an idealised left ventricle: a truncated-ellipsoid myocardium with an
+analytical fibre field, a visco-active Holzapfel--Ogden law and pericardial
+Robin supports, whose cavity is filled with an incompressible Newtonian
+fluid. Rather than a cardiac cycle, two valve-free problems are posed:
+pressure-driven passive deformation through an inflow port, and
+activation-driven contraction through an outflow port. Each has a solid-only
+counterpart in \citet{Arostica2025} with nine published numerical solutions,
+which verify the solid solver; the coupled problems are verified by spatial,
+temporal and iterative convergence and by mass and energy diagnostics, and
+the difference between coupled and solid-only responses characterises the
+influence of the fluid domain and boundary configuration. The contribution
+is a fully specified coupled problem and an executable reference
+configuration --- fluid discretisation, mesh motion, interface transfer,
+coupling acceleration and convergence criteria, all stated explicitly ---
+with sensitivity studies that quantify the numerical uncertainty of the
+reported quantities of interest.
+\RES{Replace with measured findings and uncertainties once runs exist.}
+Geometry, meshes, case files, forcing tables and data are to be released
+with a fixed commit and archival DOI, and a minimum reporting checklist for
+ventricular FSI is proposed.
 \end{abstract}
 
 \begin{highlights}
-\item Adds blood flow to the Ar\'ostica et al.\ (2025) cardiac elastodynamics benchmark.
-\item Separate passive-filling and active-contraction FSI problems, no valves needed.
-\item Each FSI problem has a solid-only counterpart with nine reference codes.
-\item Every solver, stabilisation and coupling setting reported and varied.
-\item Open meshes, case files, reference data and a reporting checklist.
+\item Extends the Ar\'ostica et al.\ (2025) cardiac elastodynamics benchmark to FSI.
+\item Two valve-free problems: pressure-driven filling, activation-driven contraction.
+\item Solid verified against nine published codes; coupled problems by convergence.
+\item Coupling sequence, residuals, tolerances and stabilisation stated explicitly.
+\item Settings manifest, open cases and a reporting checklist for ventricular FSI.
 \end{highlights}
