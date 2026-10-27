@@ -1,4 +1,4 @@
-\section{Verification methodology}\label{sec:verification}
+\section{Verification and robustness methodology}\label{sec:verification}
 
 \subsection{Error estimation}
 For a scalar quantity $\phi$ computed on three systematically refined meshes
@@ -12,29 +12,66 @@ p_{\mathrm{obs}} = \frac{\ln\bigl|(\phi_3-\phi_2)/(\phi_2-\phi_1)\bigr|}{\ln r},
 For time series we use the $\RED$ of AR25 against the finest solution and the
 relative $L^2$-in-time norm
 $e_{L^2} = \|\phi_h-\phi_{\mathrm{ref}}\|_{L^2(0,T)}/\|\phi_{\mathrm{ref}}\|_{L^2(0,T)}$.
-\TODO{Scalar QoIs for GCI: EDV, ESV, EF, peak $\bar p$, peak $\Delta p_{\mathrm{IVPD}}$,
-peak $E_k$, $\uu(\vect p_0)$ at end-filling and end-ejection.}
-
-\subsection{Spatial convergence}\label{sec:ver:mesh}
-Steps 0--3 on M1--M4 at fixed small $\dt$. Solid and fluid refined together
-\TODO{and separately, to attribute error}.
-
-\subsection{Temporal convergence}\label{sec:ver:time}
-On the finest affordable mesh, $\dt \in \{\num{4e-4},\num{2e-4},\num{1e-4},
-\num{5e-5},\num{2.5e-5}\}$\,s \TODO{adjust}; report Courant numbers.
-Expected order 2 (BDF2) or 1 (Euler); verify $p_{\mathrm{obs}}$.
-
-\subsection{Scheme sensitivity}\label{sec:ver:schemes}
+Scalar QoIs for the GCI:
 \begin{itemize}
-\item fluid time scheme: Euler vs.\ backward;
-\item convection: linearUpwind vs.\ linear (central) vs.\ upwind;
-\item solid formulation: mixed $\uu$--$p$ vs.\ pure displacement;
-\item solid stabilisation scale factor;
-\item coupling tolerance $\epsilon_{\mathrm{FSI}}\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$
-  and relaxation strategy (fixed, Aitken, IQN-ILS): effect on accuracy and cost.
+\item Problem F: peak and final cavity volume, peak $\bar p$ (F-Q),
+  peak $\Delta p_{\mathrm{IVPD}}$, peak $E_k$, $\uu(\vect p_0)$ and
+  $\uu(\vect p_1)$ at the time of peak loading;
+\item Problem C: ejected volume, peak outflow rate, peak $\Delta p_{\mathrm{IVPD}}$,
+  peak $E_k$, $\uu(\vect p_0)$ and $\uu(\vect p_1)$ at peak contraction.
 \end{itemize}
 
-\subsection{Conservation checks}
-Fluid volume vs.\ $V_0 + \int (Q_{\mathrm{in}}-Q_{\mathrm{out}})$; geometric
-conservation law of the ALE scheme; energy budget (work of interface tractions
-vs.\ $\dot E_k + \Phi$).
+\subsection{Spatial convergence}\label{sec:ver:mesh}
+Problems S, F and C on M1--M4 at a fixed small $\dt$. Solid and fluid are
+refined together, and then separately (fine solid with coarse fluid and vice
+versa), to attribute the discretisation error to each sub-problem.
+
+\subsection{Temporal convergence}\label{sec:ver:time}
+On the finest affordable mesh,
+$\dt \in \{\num{4e-4},\num{2e-4},\num{1e-4},\num{5e-5},\num{2.5e-5}\}$\,s
+\TODO{adjust}, with the coupling tolerance tightened so that it does not
+contaminate the temporal error. Report the maximum Courant number and the
+observed temporal order (expected 2 for BDF2, 1 for implicit Euler).
+
+\subsection{Sensitivity to numerical settings and robustness}\label{sec:ver:robust}
+Starting from the baseline (\cref{tab:settings}), one setting is varied at a
+time on mesh M2 (and M3 for the most influential). For each run we record
+(i) whether it completes, (ii) the deviation of the QoIs from the baseline
+($\RED$), and (iii) the cost: FSI iterations per step and wall-clock time.
+\begin{enumerate}
+\item \textbf{Solid incompressibility}: mixed $\uu$--$p$ vs.\ pure
+  displacement with penalty $\kappa$.
+\item \textbf{Solid momentum stabilisation}: type (\texttt{RhieChow},
+  \texttt{diffStencilLaplacian}) and factor
+  $c_{\uu}\in\{0.1, 1, 10, 100\}$ \TODO{range}; show the trade-off between
+  checkerboard suppression and artificial stiffening, and its dependence on
+  mesh size (the stabilisation should vanish with $h\to0$).
+\item \textbf{Solid pressure stabilisation}: $c_p \in \{0.1, 1, 10\}$.
+\item \textbf{Fluid time scheme}: Euler vs.\ backward.
+\item \textbf{Fluid convection scheme}: upwind, linearUpwind, linear.
+\item \textbf{Mesh motion}: diffusivity choice; minimum cell quality reached
+  at peak deformation.
+\item \textbf{Interface condition}: Dirichlet--Neumann vs.\ Robin;
+  Robin parameters $p_{\mathrm{ref}}$, $U_{\mathrm{ref}}$ over two orders of
+  magnitude.
+\item \textbf{Acceleration}: fixed relaxation ($\omega\in\{0.1,0.5,1\}$),
+  Aitken, IQN-ILS (with reuse of past time steps).
+\item \textbf{Coupling tolerance}:
+  $\epsilon_{\mathrm{FSI}}\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$; the
+  loosest tolerance whose QoIs agree with the tightest within the
+  discretisation error is the recommended value.
+\end{enumerate}
+The outcome is a robustness map (\cref{tab:robust}) and a recommended
+``benchmark-grade'' configuration.
+
+\subsection{Conservation and consistency checks}
+\begin{itemize}
+\item cavity volume from the fluid mesh vs.\ from $\Gendo$, and (F-Q)
+  vs.\ $V_0+\int_0^t Q_{\mathrm{in}}\,\mathrm ds$;
+\item discrete geometric conservation law of the ALE scheme (a uniform
+  flow is preserved on the moving mesh);
+\item energy budget: power of the interface tractions vs.\
+  $\dot E_k + \Phi$ plus port fluxes;
+\item interface consistency: velocity and traction jumps across $\Gfsi$ at
+  convergence.
+\end{itemize}

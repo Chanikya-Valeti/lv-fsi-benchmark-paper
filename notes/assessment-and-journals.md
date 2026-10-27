@@ -9,9 +9,13 @@ What is new:
   exist, but none has an active, anisotropic, nearly incompressible solid enclosing a cavity.
 - Direct continuity with Aróstica 2025 (CMAME): Step 0 reuses their geometry, material,
   fibres and nine-code reference data. Reviewers can check it at once.
-- A hierarchy of steps (solid → prescribed-motion CFD → filling → full cycle) lets other
-  codes find where they disagree.
-- Systematic mesh / Δt / scheme / coupling-tolerance studies with GCI, plus a reporting checklist.
+- Scope (revised): no full cycle. Two separate FSI problems, **passive filling (F)** and
+  **active contraction (C)**, each the FSI counterpart of an AR25 solid-only case
+  (F-p ↔ Step 0B, C-p ↔ Step 0A). The FSI minus solid-only difference isolates the fluid effect.
+- Problem S (AR25 Steps 0A/0B/1 with the same solver settings) verifies the solid first.
+- Rigour of the numerical setup is the core contribution: every stabilisation, fluid-scheme,
+  mesh-motion and coupling setting reported and varied (robustness map), plus mesh / Δt studies
+  with GCI and a reporting checklist.
 
 What reviewers will push on (decide early):
 1. **Evidence for the gap claim.** Do a systematic survey (Table 1 in the intro) to back up the
@@ -30,8 +34,9 @@ What reviewers will push on (decide early):
    electroMechanicalLaw with its own fibres. For the benchmark, use the AR25 geometry +
    viscoActiveHolzapfelOgden + AR25 fibres + Robin BCs (i.e. the `ArosticaEtAl2025` setup).
 5. **AR25 LV is large** (unloaded cavity ≈ 168 mL). Fine for a benchmark, but say so.
-6. Fix the activation timing relative to filling (AR25 t_sys = 0.16 s vs. filling to 0.65 s
-   in the current tutorial).
+6. Activation now keeps AR25 timing (t_sys = 0.16 s) since contraction is its own problem.
+7. AR25 p(t) peaks at 16 kPa (systolic level). Using it for filling keeps direct comparability
+   with Step 0B; scaling it to diastolic levels loses that. Decide and state it.
 
 ## Target journals (in order of fit)
 1. **International Journal for Numerical Methods in Biomedical Engineering (IJNMBE, Wiley).**
