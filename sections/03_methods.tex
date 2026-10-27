@@ -1,0 +1,74 @@
+\section{Reference numerical method}\label{sec:methods}
+
+Reference solutions are computed with solids4foam \citep{Cardiff2018}
+\TODO{version / commit} on OpenFOAM \TODO{v2312/v2412}. Every setting below is
+also given in the released case files.
+
+\subsection{Solid solver}
+Cell-centred finite-volume, total-Lagrangian, total-displacement formulation
+(\texttt{nonLinearGeometryTotalLagrangianTotalDisplacement}); law
+\texttt{viscoActiveHolzapfelOgden}; Newton via PETSc SNES with a matrix-free
+Jacobian and backtracking line search. Incompressibility: mixed
+displacement--pressure formulation (\texttt{solvePressure true}) with
+momentum stabilisation \texttt{diffStencilLaplacian} (scale factor 100) and
+Rhie--Chow pressure stabilisation. \TODO{justify stabilisation factor;
+sensitivity in \cref{sec:ver:schemes}.} Time integration: second-order
+backward differentiation (BDF2) for $\ddot\uu$ and $\dot\uu$.
+
+\subsection{Fluid solver}
+PIMPLE pressure--velocity algorithm on a moving mesh with
+\texttt{ddtCorr}; mesh motion by \TODO{Laplacian/velocity motion solver and
+diffusivity}. Schemes in \cref{tab:schemes}.
+
+\subsection{Coupling}
+Partitioned, strongly coupled. Interface quantities: \TODO{Robin-type
+coupling (\texttt{elasticWallPressure}, \citealp{Tukovic2018}) and
+relaxation (fixed / Aitken \citealp{Kuttler2008} / IQN-ILS
+\citealp{Degroote2009})}; convergence criterion on the relative interface
+displacement residual, tolerance $\epsilon_{\mathrm{FSI}}$, maximum
+$N_{\mathrm{FSI}}$ outer correctors.
+
+\begin{table}[t]
+\centering
+\caption{Discretisation schemes and solver settings of the reference solution.}
+\label{tab:schemes}
+\small
+\begin{tabular}{lll}
+\toprule
+Item & Solid & Fluid \\
+\midrule
+Time scheme & BDF2 (\texttt{backward}) & \TODO{Euler $\to$ backward?} \\
+Gradient & \texttt{leastSquaresS4f} & Gauss linear \\
+Convection & -- & Gauss linearUpwind grad(U) \\
+Laplacian & Gauss linear corrected & Gauss linear corrected \\
+Linear solver & PETSc \TODO{} & GAMG / PBiCGStab \TODO{} \\
+Non-linear tol. & \num{1e-6} & PIMPLE: \TODO{} \\
+Time step & \multicolumn{2}{c}{\TODO{converged $\dt$ from \cref{sec:ver:time}}} \\
+Coupling & \multicolumn{2}{c}{$\epsilon_{\mathrm{FSI}} = $ \num{5e-5}, $N_{\mathrm{FSI}}=30$, relaxation \TODO{}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Meshes}
+Solid: the all-hexahedral O-grid meshes of the solids4foam AR25 tutorial,
+levels M1--M4 with refinement ratio $r=2$ in each direction. Fluid:
+\TODO{conforming hexahedral/polyhedral cavity mesh, matched or non-matching
+at $\Gfsi$}. \Cref{tab:meshes} lists the cell counts.
+
+\begin{table}[t]
+\centering
+\caption{Mesh levels. Solid counts: square side $\times$ ring $\times$ wall.}
+\label{tab:meshes}
+\begin{tabular}{lrrrr}
+\toprule
+Level & Solid divisions & Solid cells & Fluid cells & $h_{\min}$ [mm] \\
+\midrule
+M1 & $8\times18\times3$   & \num{1920}   & \TODO{} & \TODO{} \\
+M2 & $16\times36\times5$  & \num{12800}  & \TODO{} & \TODO{} \\
+M3 & $32\times72\times10$ & \num{102400} & \TODO{} & \TODO{} \\
+M4 & $64\times144\times20$ & \num{819200} & \TODO{} & \TODO{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\TODO{Note: M1$\to$M2 wall divisions go 3$\to$5 (ratio not exactly 2); use
+the generalised GCI with an effective $r$ \citep{Celik2008}.}

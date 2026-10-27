@@ -1,0 +1,40 @@
+\section{Verification methodology}\label{sec:verification}
+
+\subsection{Error estimation}
+For a scalar quantity $\phi$ computed on three systematically refined meshes
+(or time steps) with ratio $r$, the observed order, extrapolated value and
+fine-grid convergence index are \citep{Roache1998,Celik2008}
+\begin{equation}
+p_{\mathrm{obs}} = \frac{\ln\bigl|(\phi_3-\phi_2)/(\phi_2-\phi_1)\bigr|}{\ln r},\qquad
+\phi_{\mathrm{ext}} = \phi_1 + \frac{\phi_1-\phi_2}{r^{p_{\mathrm{obs}}}-1},\qquad
+\mathrm{GCI}_{21} = \frac{1.25\,|(\phi_1-\phi_2)/\phi_1|}{r^{p_{\mathrm{obs}}}-1}.
+\end{equation}
+For time series we use the $\RED$ of AR25 against the finest solution and the
+relative $L^2$-in-time norm
+$e_{L^2} = \|\phi_h-\phi_{\mathrm{ref}}\|_{L^2(0,T)}/\|\phi_{\mathrm{ref}}\|_{L^2(0,T)}$.
+\TODO{Scalar QoIs for GCI: EDV, ESV, EF, peak $\bar p$, peak $\Delta p_{\mathrm{IVPD}}$,
+peak $E_k$, $\uu(\vect p_0)$ at end-filling and end-ejection.}
+
+\subsection{Spatial convergence}\label{sec:ver:mesh}
+Steps 0--3 on M1--M4 at fixed small $\dt$. Solid and fluid refined together
+\TODO{and separately, to attribute error}.
+
+\subsection{Temporal convergence}\label{sec:ver:time}
+On the finest affordable mesh, $\dt \in \{\num{4e-4},\num{2e-4},\num{1e-4},
+\num{5e-5},\num{2.5e-5}\}$\,s \TODO{adjust}; report Courant numbers.
+Expected order 2 (BDF2) or 1 (Euler); verify $p_{\mathrm{obs}}$.
+
+\subsection{Scheme sensitivity}\label{sec:ver:schemes}
+\begin{itemize}
+\item fluid time scheme: Euler vs.\ backward;
+\item convection: linearUpwind vs.\ linear (central) vs.\ upwind;
+\item solid formulation: mixed $\uu$--$p$ vs.\ pure displacement;
+\item solid stabilisation scale factor;
+\item coupling tolerance $\epsilon_{\mathrm{FSI}}\in\{10^{-3},10^{-4},10^{-5},10^{-6}\}$
+  and relaxation strategy (fixed, Aitken, IQN-ILS): effect on accuracy and cost.
+\end{itemize}
+
+\subsection{Conservation checks}
+Fluid volume vs.\ $V_0 + \int (Q_{\mathrm{in}}-Q_{\mathrm{out}})$; geometric
+conservation law of the ALE scheme; energy budget (work of interface tractions
+vs.\ $\dot E_k + \Phi$).

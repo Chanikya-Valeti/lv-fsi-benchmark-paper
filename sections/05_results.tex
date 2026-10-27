@@ -1,0 +1,41 @@
+\section{Results}\label{sec:results}
+
+\subsection{Step 0: solid verification against AR25}
+\RES{Overlay $\uu(\vect p_0,t)$, $\uu(\vect p_1,t)$ against the nine AR25 codes
+(as in their Fig.~10); table of $\RED$ per mesh level.}
+
+\subsection{Step 1: prescribed-motion CFD}
+\RES{Volume conservation error, $E_k(t)$, mid-plane velocity snapshots;
+mesh and $\dt$ convergence.}
+
+\subsection{Step 2: coupled passive filling}
+\RES{$V(t)$, $\bar p(t)$, $\Delta p_{\mathrm{IVPD}}(t)$, displacements;
+vortex-ring formation and propagation; FSI iterations per time step.}
+
+\subsection{Step 3: full filling--contraction cycle}
+\RES{PV loop, EF, stroke work, wall thickening, apex displacement, twist;
+$E_k$ and dissipation; snapshots at end-filling, peak ejection, end-ejection.}
+
+\subsection{Mesh and time-step convergence}
+\begin{table}[h]
+\centering
+\caption{Grid-convergence study, Step 3. \RES{fill}}
+\label{tab:gci}
+\begin{tabular}{lcccccc}
+\toprule
+QoI & M2 & M3 & M4 & $p_{\mathrm{obs}}$ & $\phi_{\mathrm{ext}}$ & GCI$_{43}$ [\%] \\
+\midrule
+EDV [mL] & & & & & & \\
+ESV [mL] & & & & & & \\
+Peak $\bar p$ [kPa] & & & & & & \\
+Peak $\Delta p_{\mathrm{IVPD}}$ [Pa] & & & & & & \\
+Peak $E_k$ [mJ] & & & & & & \\
+$u_x(\vect p_0)$ at $t_3$ [mm] & & & & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+\RES{Same structure for $\dt$ (Table) and scheme sensitivity (Table/Fig.).}
+
+\subsection{Computational cost}
+\RES{Wall-clock, cores, FSI iterations for each mesh/$\dt$; recommended
+``benchmark-grade'' setting balancing cost and accuracy.}

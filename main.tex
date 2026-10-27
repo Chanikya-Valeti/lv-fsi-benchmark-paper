@@ -1,0 +1,81 @@
+%% =====================================================================
+%% An open fluid-structure interaction benchmark for an idealised
+%% left ventricle: passive filling and active contraction without valves
+%%
+%% Template: elsarticle (CMAME / Comput. Fluids / J. Fluids Struct.).
+%% For IJNMBE (Wiley) switch to the Wiley NJD template on Overleaf;
+%% the sections/ files are journal-agnostic.
+%% =====================================================================
+\documentclass[preprint,12pt,authoryear]{elsarticle}
+%\documentclass[final,5p,times,twocolumn,authoryear]{elsarticle} % journal look
+
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{siunitx}
+\usepackage{booktabs,multirow,array,tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{lineno}
+\usepackage[colorlinks=true,citecolor=blue!60!black,linkcolor=blue!60!black,urlcolor=blue!60!black]{hyperref}
+\usepackage{cleveref}
+
+\input{macros}
+
+\journal{Computer Methods in Applied Mechanics and Engineering} % TODO: target journal
+\linenumbers
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{An open fluid--structure interaction benchmark for an idealised left
+ventricle: passive filling and active contraction without valves}
+
+\author[ucd]{Chanikya Valeti\corref{cor1}}
+\ead{chanikya.valeti@ucd.ie}
+\author[ucd]{Philip Cardiff}
+\TODO{add co-authors / contributing groups}
+
+\cortext[cor1]{Corresponding author}
+\affiliation[ucd]{organization={School of Mechanical and Materials Engineering, University College Dublin},
+  city={Dublin}, country={Ireland}}
+
+\input{sections/00_abstract}
+
+\begin{keyword}
+Fluid--structure interaction \sep Cardiac mechanics \sep Left ventricle \sep
+Benchmark \sep Verification \sep Mesh and time-step convergence \sep
+Finite volume method \sep solids4foam
+\end{keyword}
+
+\end{frontmatter}
+
+\input{sections/01_introduction}
+\input{sections/02_problem}
+\input{sections/03_methods}
+\input{sections/04_verification}
+\input{sections/05_results}
+\input{sections/06_discussion}
+\input{sections/07_conclusions}
+
+\section*{Data and code availability}
+\input{sections/08_availability}
+
+\section*{CRediT authorship contribution statement}
+\TODO{CRediT roles.}
+
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial interests or
+personal relationships that could have appeared to influence the work reported
+in this paper.
+
+\section*{Acknowledgements}
+\TODO{Funding (e.g.\ SFI / Research Ireland / ERC), compute resources (xenosim), ICHEC.}
+
+\appendix
+\input{sections/A_parameters}
+\input{sections/B_checklist}
+
+\bibliographystyle{elsarticle-harv}
+\bibliography{refs}
+
+\end{document}

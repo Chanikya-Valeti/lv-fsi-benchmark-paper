@@ -1,0 +1,38 @@
+\begin{abstract}
+Fluid--structure interaction (FSI) models of the left ventricle (LV) are
+increasingly used to study intraventricular haemodynamics, yet published
+studies rarely report the information needed to reproduce them: ventricular
+dimensions, constitutive parameters, the spatial and temporal schemes, the
+coupling algorithm and its tolerances, and evidence of mesh and time-step
+convergence. Unlike structural cardiac mechanics, for which community
+benchmarks now exist \citep{Land2015,Arostica2025}, there is no fully specified
+benchmark for ventricular FSI.
+We propose one. The problem extends the monoventricular elastodynamics
+benchmark of \citet{Arostica2025} --- an idealised truncated-ellipsoid LV with
+an analytical fibre field, a visco-active Holzapfel--Ogden myocardium and
+pericardial Robin boundary conditions --- by filling its cavity with an
+incompressible Newtonian fluid. The cardiac cycle is driven without valves:
+a passive filling phase through an inflow port is followed by an active
+contraction phase that ejects through an outflow port, both with analytically
+prescribed flow-rate waveforms. The benchmark is organised hierarchically:
+(i) solid-only verification against the multi-code reference solutions of
+\citet{Arostica2025}, (ii) moving-domain CFD with prescribed wall motion,
+(iii) coupled passive filling and (iv) the full filling--contraction cycle.
+For each step we define quantities of interest --- cavity volume and pressure,
+pressure--volume loop, material-point displacements, intraventricular
+pressure difference, kinetic energy and vortex metrics --- and report
+systematic mesh-, time-step- and scheme-sensitivity studies with
+grid-convergence indices.
+Reference solutions are computed with the finite-volume toolbox solids4foam
+\RES{key numbers: e.g.\ converged ejection fraction, peak pressure, GCI}.
+All geometry, meshes, case files and reference data are released openly, and a
+minimum reporting checklist for ventricular FSI studies is proposed.
+\end{abstract}
+
+\begin{highlights}
+\item A fully specified, valve-free FSI benchmark of an idealised left ventricle.
+\item Extends the Ar\'ostica et al.\ (2025) cardiac elastodynamics benchmark to FSI.
+\item Hierarchical steps: solid-only, prescribed-motion CFD, filling, full cycle.
+\item Mesh, time-step and scheme sensitivity with grid-convergence indices.
+\item Open meshes, case files, reference data and a reporting checklist.
+\end{highlights}
